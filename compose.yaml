@@ -1,0 +1,30 @@
+services:
+  app:
+    image: ghcr.io/mschmiedel/impostor-game:latest
+    container_name: impostor-game
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    depends_on:
+      - redis
+    networks:
+      - game-net
+
+  redis:
+    image: redis:alpine
+    container_name: impostor-redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - game-net
+
+networks:
+  game-net:
+
+volumes:
+  redis_data:
