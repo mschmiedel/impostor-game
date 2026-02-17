@@ -4,7 +4,6 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    # Trigger on PRs targeting main
     branches: [ "main" ]
 
 env:
@@ -55,15 +54,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # logic:
-          # - type=ref,event=branch -> generates tag like 'feature-languages' for branch 'feature/languages' (sanitized automatically by this action)
-          # - type=ref,event=pr -> generates tag like 'pr-123'
-          # - type=raw,value=latest -> only when pushing to main
           tags: |
             type=ref,event=branch
             type=ref,event=pr
             type=sha
-            type=raw,value=latest,enable=${{ github.ref == 'format(\'refs/heads/{0}\', \'main\')' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
