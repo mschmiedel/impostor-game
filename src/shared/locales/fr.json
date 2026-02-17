@@ -47,5 +47,6 @@
   "errorJoining": "Erreur lors de la connexion",
   "gameNotFound": "Jeu introuvable",
   "joining": "Connexion...",
-  "error": "Erreur"
+  "error": "Erreur",
+  "checkHistory": "Vérifiez l'historique pour les détails."
 }

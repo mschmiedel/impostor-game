@@ -47,5 +47,6 @@
   "errorJoining": "Error al unirse",
   "gameNotFound": "Juego no encontrado",
   "joining": "Uniéndose...",
-  "error": "Error"
+  "error": "Error",
+  "checkHistory": "Revisa el historial para ver detalles."
 }

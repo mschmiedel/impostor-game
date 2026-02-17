@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { QRCodeSVG } from 'qrcode.react';
 import { useLanguage } from "@/shared/i18n/LanguageContext";
@@ -46,7 +46,13 @@ export default function GameRoom() {
     }
   }, []);
   
-  const getSecret = () => localStorage.getItem(`impostor_secret_${gameId}`);
+  // Wrapped in useCallback to be stable for useEffect dependency
+  const getSecret = useCallback(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`impostor_secret_${gameId}`);
+    }
+    return null;
+  }, [gameId]);
 
   useEffect(() => {
     const secret = getSecret();
@@ -91,7 +97,7 @@ export default function GameRoom() {
     const interval = setInterval(fetchGame, 2000); 
 
     return () => clearInterval(interval);
-  }, [gameId, router, t]);
+  }, [gameId, router, t, getSecret]); // Added getSecret to dependencies
 
   const apiCall = async (endpoint: string) => {
     const secret = getSecret();
