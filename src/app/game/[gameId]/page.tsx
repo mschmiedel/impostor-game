@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { QRCodeSVG } from 'qrcode.react';
 
 type Player = {
   id: string;
@@ -34,6 +34,14 @@ export default function GameRoom() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentUrl(window.location.href);
+    }
+  }, []);
   
   useEffect(() => {
     // Check credentials
@@ -141,9 +149,12 @@ export default function GameRoom() {
             ))}
           </div>
           
-          <div className="flex gap-4 justify-center flex-col sm:flex-row">
+          <div className="flex gap-4 justify-center flex-col sm:flex-row items-center">
              <button onClick={() => navigator.clipboard.writeText(window.location.href)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
                 Link kopieren
+             </button>
+             <button onClick={() => setShowQR(!showQR)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
+                QR Code {showQR ? "verbergen" : "anzeigen"}
              </button>
              {isAdmin && (
                 <button 
@@ -155,6 +166,14 @@ export default function GameRoom() {
                 </button>
              )}
           </div>
+          
+          {showQR && currentUrl && (
+             <div className="mt-6 flex justify-center animate-fadeIn p-4 bg-white rounded-lg border shadow-sm inline-block">
+                <QRCodeSVG value={currentUrl} size={150} />
+                <p className="mt-2 text-xs text-gray-500">Scanne mich zum Beitreten</p>
+             </div>
+          )}
+
            {isAdmin && game.players.length < 3 && <p className="text-sm text-gray-400 mt-2">Mindestens 3 Spieler benötigt.</p>}
         </div>
       )}
