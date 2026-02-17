@@ -47,5 +47,6 @@
   "errorJoining": "Fehler beim Beitreten",
   "gameNotFound": "Spiel nicht gefunden",
   "joining": "Beitreten...",
-  "error": "Fehler"
+  "error": "Fehler",
+  "checkHistory": "Überprüfe den Verlauf für Details."
 }

@@ -26,19 +26,19 @@ global.fetch = jest.fn(() =>
 describe('POST /api/nextTurn/:gameId', () => {
   const repo = new RedisGameRepository();
   const gameId = 'test-game-turn';
-  const adminPwd = 'admin-pwd';
+  const playerSecret = 'host-secret';
+  const playerId = 'host-id';
 
   beforeEach(async () => {
     const game: Game = {
       gameId,
-      adminPwd,
       ageOfYoungestPlayer: 10,
       language: 'en-US',
       status: 'STARTED',
       players: [
-        { id: 'p1', name: 'Alice' }, 
-        { id: 'p2', name: 'Bob' },
-        { id: 'p3', name: 'Charlie' }
+        { id: playerId, name: 'Alice', role: 'HOST', secret: playerSecret }, 
+        { id: 'p2', name: 'Bob', role: 'PLAYER', secret: 's2' },
+        { id: 'p3', name: 'Charlie', role: 'PLAYER', secret: 's3' }
       ],
       turns: [],
       createdAt: Date.now(),
@@ -47,17 +47,26 @@ describe('POST /api/nextTurn/:gameId', () => {
   });
 
   it('should start next turn using game language', async () => {
-    const req = new NextRequest(`http://localhost/api/nextTurn/${gameId}?adminPwd=${adminPwd}`, {
+    const req = new NextRequest(`http://localhost/api/nextTurn/${gameId}`, {
       method: 'POST',
+      headers: {
+          'x-player-secret': playerSecret
+      }
     });
 
     const response = await POST(req, { params: { gameId } });
     const json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toHaveProperty('role');
+    // The endpoint returns { success: true }, not the role directly
+    expect(json).toHaveProperty('success', true);
     
     // Verify fetch was called (implicit check that language was passed logic-wise)
-    expect(global.fetch).toHaveBeenCalled(); 
+    expect(global.fetch).toHaveBeenCalled();
+
+    // Verify that the turn was actually created in the DB
+    const updatedGame = await repo.findById(gameId);
+    expect(updatedGame?.turns).toHaveLength(1);
+    expect(updatedGame?.turns[0].word).toBe('mock-word');
   });
 });

@@ -4,7 +4,7 @@ import { Game } from '@/domain/entities/Game';
 
 export interface StartGameInput {
   gameId: string;
-  adminPwd: string;
+  playerSecret: string;
 }
 
 export interface StartGameOutput {
@@ -21,7 +21,8 @@ export class StartGameUseCase {
       throw new Error("Game not found");
     }
 
-    if (game.adminPwd !== input.adminPwd) {
+    const player = game.players.find(p => p.secret === input.playerSecret);
+    if (!player || player.role !== 'HOST') {
       throw new Error("Unauthorized");
     }
 

@@ -26,7 +26,7 @@ describe('POST /api/createGame', () => {
 
     expect(response.status).toBe(201);
     expect(json).toHaveProperty('gameId');
-    expect(json).toHaveProperty('adminPwd');
+    expect(json).toHaveProperty('playerSecret');
     expect(json.language).toBe('de-DE');
 
     const game = await repo.findById(json.gameId);

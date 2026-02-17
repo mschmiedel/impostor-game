@@ -10,18 +10,17 @@ export async function POST(
   request: Request,
   { params }: { params: { gameId: string } }
 ) {
-  const { searchParams } = new URL(request.url);
-  const adminPwd = searchParams.get('adminPwd');
+  const playerSecret = request.headers.get('x-player-secret');
   const gameId = params.gameId;
 
   try {
-    if (!adminPwd) {
-       return NextResponse.json({ error: 'Admin password is required' }, { status: 401 });
+    if (!playerSecret) {
+       return NextResponse.json({ error: 'Player secret is required' }, { status: 401 });
     }
 
     const result = await startGameUseCase.execute({
       gameId: gameId,
-      adminPwd: adminPwd,
+      playerSecret: playerSecret,
     });
 
     return NextResponse.json(result, { status: 200 });
@@ -30,7 +29,7 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     if (error.message === "Unauthorized") {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+      return NextResponse.json({ error: error.message }, { status: 403 });
     }
     console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

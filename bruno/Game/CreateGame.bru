@@ -14,13 +14,13 @@ body:json {
   {
     "ageOfYoungestPlayer": 10,
     "creatorName": "HostPlayer",
-    "language": "de-DE"
+    "language": "es-MX"
   }
 }
 
 script:post-response {
   if (res.status === 201) {
     bru.setEnvVar("gameId", res.body.gameId);
-    bru.setEnvVar("adminPwd", res.body.adminPwd);
+    bru.setEnvVar("adminSecret", res.body.playerSecret);
   }
 }

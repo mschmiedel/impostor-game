@@ -1,12 +1,16 @@
 
 export type GameStatus = 'JOINING' | 'STARTED' | 'FINISHED';
 
+export type LobbyRole = 'HOST' | 'PLAYER';
+
 export interface Player {
   id: string;
   name: string;
+  secret: string; // Authentication secret
+  role: LobbyRole;
 }
 
-export type Role = 'CIVILIAN' | 'IMPOSTOR';
+export type GameRole = 'CIVILIAN' | 'IMPOSTOR';
 
 export interface Turn {
   word: string;
@@ -16,9 +20,9 @@ export interface Turn {
 
 export interface Game {
   gameId: string;
-  adminPwd: string;
+  // adminPwd removed
   ageOfYoungestPlayer: number;
-  language: string; // New field
+  language: string;
   status: GameStatus;
   players: Player[];
   turns: Turn[];

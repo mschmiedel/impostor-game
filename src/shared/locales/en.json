@@ -47,5 +47,6 @@
   "errorJoining": "Error joining",
   "gameNotFound": "Game not found",
   "joining": "Joining...",
-  "error": "Error"
+  "error": "Error",
+  "checkHistory": "Check the history to see details."
 }

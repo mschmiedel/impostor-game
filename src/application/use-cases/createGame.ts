@@ -12,8 +12,8 @@ export interface CreateGameInput {
 export interface CreateGameOutput {
   gameId: string;
   status: GameStatus;
-  adminPwd: string;
   playerId: string;
+  playerSecret: string;
   language: string;
 }
 
@@ -26,17 +26,16 @@ export class CreateGameUseCase {
     }
 
     const gameId = uuidv4();
-    const adminPwd = uuidv4();
     const playerId = uuidv4();
+    const playerSecret = uuidv4();
     const language = input.language || 'de-DE';
 
     const newGame: Game = {
       gameId,
-      adminPwd,
       ageOfYoungestPlayer: input.ageOfYoungestPlayer,
       language,
       status: 'JOINING',
-      players: [{ id: playerId, name: input.creatorName }],
+      players: [{ id: playerId, name: input.creatorName, secret: playerSecret, role: 'HOST' }],
       turns: [], 
       createdAt: Date.now(),
     };
@@ -46,8 +45,8 @@ export class CreateGameUseCase {
     return {
       gameId: newGame.gameId,
       status: newGame.status,
-      adminPwd: newGame.adminPwd,
       playerId,
+      playerSecret,
       language
     };
   }
