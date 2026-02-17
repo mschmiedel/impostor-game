@@ -1,4 +1,3 @@
-
 name: CI/CD Pipeline
 
 on:
@@ -30,7 +29,7 @@ jobs:
       - name: Run Tests
         run: npm test
         env:
-          GOOGLE_API_KEY: "mock-key-for-ci" # Mock key, as tests mock the fetch anyway
+          GOOGLE_API_KEY: "mock-key-for-ci"
 
   build-and-push:
     needs: test
@@ -38,8 +37,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    # Only run on push to main
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
       - name: Checkout repository
@@ -58,9 +55,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha
             type=ref,event=branch
-            latest
+            type=ref,event=pr
+            type=sha
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
