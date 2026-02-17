@@ -51,7 +51,8 @@ export default function Home() {
 
       const data = await res.json();
       
-      localStorage.setItem(`impostor_admin_${data.gameId}`, data.adminPwd);
+      // Store player Secret instead of adminPwd
+      localStorage.setItem(`impostor_secret_${data.gameId}`, data.playerSecret);
       localStorage.setItem(`impostor_player_${data.gameId}`, data.playerId);
       
       router.push(`/game/${data.gameId}`);

@@ -32,8 +32,9 @@ export default function JoinGame() {
       }
 
       const data = await res.json();
-      // Store player ID
+      // Store player ID and Secret
       localStorage.setItem(`impostor_player_${gameId}`, data.playerId);
+      localStorage.setItem(`impostor_secret_${gameId}`, data.playerSecret);
       
       router.push(`/game/${gameId}`);
     } catch (err: any) {

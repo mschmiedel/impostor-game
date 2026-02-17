@@ -33,16 +33,6 @@
 * Return 401 if adminPwd is wrong
 * Return 400 or 500 if something went wrong
 
-### Get Turn Details
-* GET /getTurnDetails/turn/:gameId/player/:uuid
-* Returns turn details:
-  * actualTurn:
-    * Word: string (if civilian)
-    * Role: CIVILIAN|IMPOSTOR
-  * pastTurns: array of turns {word, impostorNames, civilianNames}
-* Return 404 if game not found
-* Return 404 if player not found in game
-
 ### Join Game
 * POST /joinGame/:gameId
 * Payload:

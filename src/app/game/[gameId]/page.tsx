@@ -6,24 +6,26 @@ import { useParams, useRouter } from "next/navigation";
 import { QRCodeSVG } from 'qrcode.react';
 import { useLanguage } from "@/shared/i18n/LanguageContext";
 
-type Player = {
+type PlayerDTO = {
   id: string;
   name: string;
+  role: 'HOST' | 'PLAYER';
+  isMe: boolean;
 };
 
-type TurnDetails = {
+type TurnDTO = {
+  word: string | null;
+  role: 'IMPOSTOR' | 'CIVILIAN' | 'UNKNOWN';
+  impostors?: string[];
+  civilians?: string[];
+  isCurrent: boolean;
+};
+
+type GameDTO = {
   gameId: string;
   status: "JOINING" | "STARTED" | "FINISHED";
-  players: Player[];
-  actualTurn: {
-    role: "CIVILIAN" | "IMPOSTOR" | null;
-    word: string | null;
-  } | null;
-  pastTurns: {
-    word: string;
-    impostors: string[];
-    civilians: string[];
-  }[];
+  players: PlayerDTO[];
+  turns: TurnDTO[];
 };
 
 export default function GameRoom() {
@@ -31,11 +33,9 @@ export default function GameRoom() {
   const router = useRouter();
   const { t } = useLanguage();
   
-  const [game, setGame] = useState<TurnDetails | null>(null);
+  const [game, setGame] = useState<GameDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [playerId, setPlayerId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
@@ -46,28 +46,31 @@ export default function GameRoom() {
     }
   }, []);
   
-  useEffect(() => {
-    // Check credentials
-    const adminPwd = localStorage.getItem(`impostor_admin_${gameId}`);
-    const pid = localStorage.getItem(`impostor_player_${gameId}`);
-    
-    if (adminPwd) setIsAdmin(true);
-    setPlayerId(pid);
+  const getSecret = () => localStorage.getItem(`impostor_secret_${gameId}`);
 
-    if (!pid) {
+  useEffect(() => {
+    const secret = getSecret();
+    if (!secret) {
        router.push(`/join/${gameId}`);
        return;
     }
 
     const fetchGame = async () => {
       try {
-        // Use getTurnDetails for everyone
-        const url = `/api/getTurnDetails/${gameId}/${pid}`;
-        const res = await fetch(url);
+        const res = await fetch(`/api/getGameDetails/${gameId}`, {
+           headers: {
+              'x-player-secret': secret
+           }
+        });
         
         if (res.status === 404) {
           setError(t("gameNotFound"));
           return;
+        }
+        
+        if (res.status === 401 || res.status === 403) {
+           setError(t("errorJoining")); 
+           return;
         }
         
         if (res.ok) {
@@ -85,15 +88,21 @@ export default function GameRoom() {
     };
 
     fetchGame();
-    const interval = setInterval(fetchGame, 2000); // Poll every 2s
+    const interval = setInterval(fetchGame, 2000); 
 
     return () => clearInterval(interval);
   }, [gameId, router, t]);
 
   const apiCall = async (endpoint: string) => {
-    if (!isAdmin) return;
-    const adminPwd = localStorage.getItem(`impostor_admin_${gameId}`);
-    await fetch(`/api/${endpoint}/${gameId}?adminPwd=${adminPwd}`, { method: "POST" });
+    const secret = getSecret();
+    if (!secret) return;
+    
+    await fetch(`/api/${endpoint}/${gameId}`, { 
+        method: "POST",
+        headers: {
+            'x-player-secret': secret
+        }
+    });
   };
 
   const startGame = () => apiCall("startGame");
@@ -103,6 +112,12 @@ export default function GameRoom() {
   if (loading && !game) return <div className="p-10 text-center">{t("loadingGame")}</div>;
   if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
   if (!game) return <div className="p-10 text-center">{t("noData")}</div>;
+
+  const me = game.players.find(p => p.isMe);
+  const isHost = me?.role === 'HOST';
+  const currentTurn = game.turns.find(t => t.isCurrent);
+  
+  const pastTurns = game.turns.filter(t => !t.isCurrent);
 
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 relative min-h-[50vh]">
@@ -121,18 +136,21 @@ export default function GameRoom() {
         </div>
       </div>
 
-      {/* HISTORY MODAL / SECTION */}
       {showHistory && (
          <div className="mb-6 bg-gray-50 p-4 rounded border animate-fadeIn">
             <h3 className="font-bold mb-2">{t("pastTurns")}</h3>
-            {game.pastTurns.length === 0 ? <p className="text-gray-500 text-sm">{t("noPastTurns")}</p> : (
+            {pastTurns.length === 0 ? <p className="text-gray-500 text-sm">{t("noPastTurns")}</p> : (
                <ul className="space-y-2 text-sm max-h-60 overflow-y-auto">
-                  {game.pastTurns.map((turn, idx) => (
+                  {pastTurns.map((turn, idx) => (
                      <li key={idx} className="border-b pb-2 last:border-0">
-                        <span className="font-semibold text-indigo-700">{t("turn")} {idx + 1}:</span> {t("word")}: <strong>{turn.word}</strong>. 
+                        <span className="font-semibold text-indigo-700">{t("turn")} {idx + 1}:</span> {t("word")}: <strong>{turn.word || "???"}</strong>. 
                         <br/>
-                        <span className="text-red-600">{t("impostor")}:</span> {turn.impostors.join(", ")}. 
-                        <span className="text-blue-600">{t("civilians")}:</span> {turn.civilians.join(", ")}.
+                        {turn.impostors && (
+                             <>
+                                <span className="text-red-600">{t("impostor")}:</span> 
+                                {game.players.filter(p => turn.impostors?.includes(p.id)).map(p => p.name).join(", ")}. 
+                             </>
+                        )}
                      </li>
                   ))}
                </ul>
@@ -140,14 +158,13 @@ export default function GameRoom() {
          </div>
       )}
 
-      {/* LOBBY */}
       {game.status === 'JOINING' && (
         <div className="text-center py-10">
           <h2 className="text-xl mb-4">{t("waitingForPlayers")}</h2>
           <div className="flex flex-wrap gap-4 justify-center mb-8">
             {game.players.map(p => (
               <div key={p.id} className="bg-gray-50 px-6 py-3 rounded shadow-sm flex items-center justify-center border border-gray-200">
-                <span className={p.id === playerId ? "font-bold text-indigo-600" : "text-gray-700"}>{p.name} {p.id === playerId ? t("you") : ""}</span>
+                <span className={p.isMe ? "font-bold text-indigo-600" : "text-gray-700"}>{p.name} {p.isMe ? t("you") : ""} {p.role === 'HOST' ? "👑" : ""}</span>
               </div>
             ))}
           </div>
@@ -159,7 +176,7 @@ export default function GameRoom() {
              <button onClick={() => setShowQR(!showQR)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
                 {showQR ? t("hideQR") : t("showQR")}
              </button>
-             {isAdmin && (
+             {isHost && (
                 <button 
                   onClick={startGame}
                   disabled={game.players.length < 3}
@@ -177,19 +194,30 @@ export default function GameRoom() {
              </div>
           )}
 
-           {isAdmin && game.players.length < 3 && <p className="text-sm text-gray-400 mt-2">{t("minPlayers")}</p>}
+           {isHost && game.players.length < 3 && <p className="text-sm text-gray-400 mt-2">{t("minPlayers")}</p>}
         </div>
       )}
 
-      {/* ACTIVE GAME */}
       {(game.status === 'STARTED' || game.status === 'FINISHED') && (
         <div>
           <div className="mb-8">
              <h2 className="text-xl font-bold mb-4 text-center">{t("currentTurn")}</h2>
-             <CurrentTurnDisplay game={game} t={t} />
+             
+             {currentTurn ? (
+                <CurrentTurnDisplay turn={currentTurn} t={t} />
+             ) : (
+                 game.status === 'FINISHED' ? (
+                    <div className="text-center p-4 bg-gray-100 rounded">
+                        <p className="font-bold text-lg">{t("gameOver")}</p>
+                        <p>{t("checkHistory")}</p>
+                    </div>
+                 ) : (
+                    <div className="text-gray-500 italic text-center animate-pulse">{t("waitingForTurn")}</div>
+                 )
+             )}
           </div>
 
-          {isAdmin && game.status !== 'FINISHED' && (
+          {isHost && game.status !== 'FINISHED' && (
             <div className="flex gap-4 border-t pt-6 justify-center">
                <button onClick={nextTurn} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded shadow-lg transition-transform hover:scale-105">
                  {t("nextTurn")}
@@ -213,14 +241,8 @@ export default function GameRoom() {
   );
 }
 
-function CurrentTurnDisplay({ game, t }: { game: TurnDetails, t: any }) {
-  if (!game.actualTurn) {
-      if (game.status === 'FINISHED') return <div className="text-gray-500 italic text-center">{t("gameOver")}</div>;
-      return <div className="text-gray-500 italic text-center animate-pulse">{t("waitingForTurn")}</div>;
-  }
-
-  const { role, word } = game.actualTurn;
-  const isImpostor = role === 'IMPOSTOR';
+function CurrentTurnDisplay({ turn, t }: { turn: TurnDTO, t: any }) {
+  const isImpostor = turn.role === 'IMPOSTOR';
 
   return (
     <div className="bg-slate-800 text-white p-8 rounded-xl text-center shadow-2xl max-w-lg mx-auto transform transition-all">
@@ -232,7 +254,7 @@ function CurrentTurnDisplay({ game, t }: { game: TurnDetails, t: any }) {
       <div className="border-t border-slate-700 pt-8">
         <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-4 font-semibold">{t("yourSecretWord")}</h3>
         <div className="text-4xl font-mono bg-slate-900 inline-block px-8 py-4 rounded-lg border border-slate-700 shadow-inner">
-           {isImpostor ? <span className="tracking-widest">???</span> : word}
+           {isImpostor ? <span className="tracking-widest">???</span> : turn.word}
         </div>
         {isImpostor ? (
             <p className="mt-4 text-sm text-red-300 font-medium">{t("findOthers")}</p>

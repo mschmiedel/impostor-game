@@ -11,6 +11,7 @@ export interface JoinGameInput {
 export interface JoinGameOutput {
   gameId: string;
   playerId: string;
+  playerSecret: string;
 }
 
 export class JoinGameUseCase {
@@ -30,13 +31,15 @@ export class JoinGameUseCase {
     }
 
     const playerId = uuidv4();
-    game.players.push({ id: playerId, name: input.playerName });
+    const playerSecret = uuidv4();
+    game.players.push({ id: playerId, name: input.playerName, secret: playerSecret, role: 'PLAYER' });
 
     await this.gameRepo.save(game);
 
     return {
       gameId: game.gameId,
-      playerId
+      playerId,
+      playerSecret
     };
   }
 }

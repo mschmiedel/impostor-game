@@ -5,11 +5,11 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/getGameDetails/{{gameId}}?adminPwd={{adminPwd}}
+  url: {{baseUrl}}/api/getGameDetails/{{gameId}}
   body: none
   auth: none
 }
 
-params:query {
-  adminPwd: {{adminPwd}}
+headers {
+  x-player-secret: {{adminSecret}}
 }

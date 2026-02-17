@@ -5,9 +5,13 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/api/finishGame/{{gameId}}?adminPwd={{adminPwd}}
+  url: {{baseUrl}}/api/finishGame/{{gameId}}?x-player-secret={{adminSecret}}
   body: none
   auth: none
+}
+
+params:query {
+  x-player-secret: {{adminSecret}}
 }
 
 script:post-response {

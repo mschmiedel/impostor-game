@@ -1,4 +1,3 @@
-
 meta {
   name: Next Turn
   type: http
@@ -6,11 +5,11 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/api/nextTurn/{{gameId}}?adminPwd={{adminPwd}}
+  url: {{baseUrl}}/api/nextTurn/{{gameId}}
   body: none
   auth: none
 }
 
-params:query {
-  adminPwd: {{adminPwd}}
+headers {
+  x-player-secret: {{adminSecret}}
 }

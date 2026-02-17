@@ -12,18 +12,17 @@ export async function POST(
   request: Request,
   { params }: { params: { gameId: string } }
 ) {
-  const { searchParams } = new URL(request.url);
-  const adminPwd = searchParams.get('adminPwd');
+  const playerSecret = request.headers.get('x-player-secret');
   const gameId = params.gameId;
 
   try {
-    if (!adminPwd) {
-       return NextResponse.json({ error: 'Admin password is required' }, { status: 401 });
+    if (!playerSecret) {
+       return NextResponse.json({ error: 'Player secret is required' }, { status: 401 });
     }
 
     const result = await nextTurnUseCase.execute({
       gameId: gameId,
-      adminPwd: adminPwd,
+      playerSecret: playerSecret,
     });
 
     return NextResponse.json(result, { status: 200 });
