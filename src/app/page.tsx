@@ -64,12 +64,12 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+    <div className="relative min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 text-gray-900">
       
       {/* Language Selector Top Right */}
       <div className="absolute top-4 right-4">
         <select
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border bg-white"
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border bg-white text-gray-900"
           value={language}
           onChange={handleLanguageChange}
         >
@@ -79,18 +79,18 @@ export default function Home() {
         </select>
       </div>
 
-      <div className="w-full max-w-md bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6 text-gray-900">
         <h1 className="text-3xl font-bold mb-6 text-center text-indigo-600">{t("title")}</h1>
         
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">{t("createGameTitle")}</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">{t("createGameTitle")}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">{t("yourName")}</label>
               <input
                 type="text"
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border text-gray-900 bg-white"
                 value={formData.creatorName}
                 onChange={(e) => setFormData({...formData, creatorName: e.target.value})}
               />
@@ -103,7 +103,7 @@ export default function Home() {
                 min="5"
                 max="100"
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border text-gray-900 bg-white"
                 value={formData.ageOfYoungestPlayer}
                 onChange={(e) => setFormData({...formData, ageOfYoungestPlayer: parseInt(e.target.value)})}
               />
@@ -120,7 +120,7 @@ export default function Home() {
         </div>
 
         <div className="border-t pt-6">
-          <h2 className="text-xl font-semibold mb-4">{t("joinGameTitle")}</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">{t("joinGameTitle")}</h2>
           <div className="space-y-4">
              <p className="text-sm text-gray-500">{t("joinGameText")}</p>
              <JoinGameInput t={t} />
@@ -147,7 +147,7 @@ function JoinGameInput({ t }: { t: any }) {
       <input
         type="text"
         placeholder={t("joinGamePlaceholder")}
-        className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border"
+        className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border text-gray-900 bg-white"
         value={gameId}
         onChange={(e) => setGameId(e.target.value)}
       />
