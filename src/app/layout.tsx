@@ -1,10 +1,13 @@
-
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { LanguageProvider } from "@/shared/i18n/LanguageContext";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Impostor Game",
-  description: "Who is the impostor?",
+  description: "Find the impostor among us",
 };
 
 export default function RootLayout({
@@ -14,10 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gray-100 text-gray-900 font-sans">
-        <main className="container mx-auto px-4 py-8">
+      <body className={inter.className}>
+        <LanguageProvider>
           {children}
-        </main>
+        </LanguageProvider>
       </body>
     </html>
   );
