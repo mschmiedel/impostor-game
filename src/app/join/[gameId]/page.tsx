@@ -51,7 +51,7 @@ export default function JoinGame() {
         <p className="text-center text-gray-500 dark:text-gray-400 mb-4 text-sm font-mono break-all">Game ID: {gameId}</p>
 
         {error && (
-          <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded relative mb-4" role="alert">
+          <div data-testid="error-message" className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded relative mb-4" role="alert">
             <strong className="font-bold">{t("error")}: </strong>
             <span className="block sm:inline">{error}</span>
           </div>
@@ -59,8 +59,9 @@ export default function JoinGame() {
 
         <form onSubmit={handleJoin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t("yourName")}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t("yourName")} (Join)</label>
             <input
+              data-testid="join-player-name-input"
               type="text"
               required
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border text-gray-900 dark:text-white bg-white dark:bg-slate-700"
@@ -70,6 +71,7 @@ export default function JoinGame() {
           </div>
 
           <button
+            data-testid="join-confirm-btn"
             type="submit"
             disabled={loading}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"

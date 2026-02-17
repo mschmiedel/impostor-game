@@ -131,19 +131,20 @@ export default function GameRoom() {
         <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{t("room")}: {gameId.substring(0,8)}...</h1>
         <div className="flex gap-2 items-center flex-wrap justify-center">
             <button 
+              data-testid="toggle-history-btn"
               onClick={() => setShowHistory(!showHistory)} 
               className="text-sm bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 px-3 py-1 rounded transition-colors"
             >
                {showHistory ? t("hideHistory") : t("showHistory")}
             </button>
             <div className="text-sm font-mono bg-gray-100 dark:bg-slate-800 dark:text-gray-300 p-2 rounded">
-              {t("status")}: <span className={game.status === 'STARTED' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}>{game.status}</span>
+              {t("status")}: <span data-testid="game-status" className={game.status === 'STARTED' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}>{game.status}</span>
             </div>
         </div>
       </div>
 
       {showHistory && (
-         <div className="mb-6 bg-gray-50 dark:bg-slate-800 p-4 rounded border dark:border-slate-700 animate-fadeIn">
+         <div data-testid="history-container" className="mb-6 bg-gray-50 dark:bg-slate-800 p-4 rounded border dark:border-slate-700 animate-fadeIn">
             <h3 className="font-bold mb-2 dark:text-gray-200">{t("pastTurns")}</h3>
             {pastTurns.length === 0 ? <p className="text-gray-500 dark:text-gray-400 text-sm">{t("noPastTurns")}</p> : (
                <ul className="space-y-2 text-sm max-h-60 overflow-y-auto custom-scrollbar">
@@ -169,21 +170,22 @@ export default function GameRoom() {
           <h2 className="text-xl mb-4 dark:text-gray-200">{t("waitingForPlayers")}</h2>
           <div className="flex flex-wrap gap-4 justify-center mb-8">
             {game.players.map(p => (
-              <div key={p.id} className="bg-gray-50 dark:bg-slate-800 px-6 py-3 rounded shadow-sm flex items-center justify-center border border-gray-200 dark:border-slate-700">
+              <div key={p.id} data-testid={`player-badge-${p.id}`} className="bg-gray-50 dark:bg-slate-800 px-6 py-3 rounded shadow-sm flex items-center justify-center border border-gray-200 dark:border-slate-700">
                 <span className={p.isMe ? "font-bold text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"}>{p.name} {p.isMe ? t("you") : ""} {p.role === 'HOST' ? "👑" : ""}</span>
               </div>
             ))}
           </div>
           
           <div className="flex gap-4 justify-center flex-col sm:flex-row items-center">
-             <button onClick={() => navigator.clipboard.writeText(window.location.href)} className="bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
+             <button data-testid="copy-link-btn" onClick={() => navigator.clipboard.writeText(window.location.href)} className="bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
                 {t("copyLink")}
              </button>
-             <button onClick={() => setShowQR(!showQR)} className="bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
+             <button data-testid="toggle-qr-btn" onClick={() => setShowQR(!showQR)} className="bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
                 {showQR ? t("hideQR") : t("showQR")}
              </button>
              {isHost && (
                 <button 
+                  data-testid="start-game-btn"
                   onClick={startGame}
                   disabled={game.players.length < 3}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
@@ -194,7 +196,7 @@ export default function GameRoom() {
           </div>
           
           {showQR && currentUrl && (
-             <div className="mt-6 flex justify-center animate-fadeIn p-4 bg-white dark:bg-white rounded-lg border shadow-sm inline-block">
+             <div data-testid="qr-code-container" className="mt-6 flex justify-center animate-fadeIn p-4 bg-white dark:bg-white rounded-lg border shadow-sm inline-block">
                 {/* QR Code always needs white background to be scannable */}
                 <QRCodeSVG value={currentUrl} size={150} />
                 <p className="mt-2 text-xs text-gray-500">{t("scanMe")}</p>
@@ -229,10 +231,10 @@ export default function GameRoom() {
 
           {isHost && game.status !== 'FINISHED' && (
             <div className="flex gap-4 border-t dark:border-slate-700 pt-6 justify-center">
-               <button onClick={nextTurn} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded shadow-lg transition-transform hover:scale-105">
+               <button data-testid="next-turn-btn" onClick={nextTurn} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded shadow-lg transition-transform hover:scale-105">
                  {t("nextTurn")}
                </button>
-               <button onClick={finishGame} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded shadow-lg transition-transform hover:scale-105">
+               <button data-testid="finish-game-btn" onClick={finishGame} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded shadow-lg transition-transform hover:scale-105">
                  {t("endGame")}
                </button>
             </div>
@@ -242,7 +244,7 @@ export default function GameRoom() {
               <div className="text-center py-6 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 rounded-lg border border-yellow-200 dark:border-yellow-700 mt-4 shadow-sm">
                 <p className="text-lg font-bold">{t("gameEnded")}</p>
                 <p className="mb-4">{t("hopeFun")}</p>
-                <button onClick={() => router.push('/')} className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors">{t("newGame")}</button>
+                <button data-testid="new-game-btn" onClick={() => router.push('/')} className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors">{t("newGame")}</button>
               </div>
            )}
         </div>
@@ -283,6 +285,7 @@ function CurrentTurnDisplay({ turn, t }: { turn: TurnDTO, t: any }) {
 
   return (
     <div 
+      data-testid="reveal-card"
       onClick={handleReveal}
       className="relative bg-slate-800 text-white p-8 rounded-xl text-center shadow-2xl max-w-lg mx-auto transform transition-all cursor-pointer overflow-hidden min-h-[300px] flex flex-col justify-center select-none dark:border dark:border-slate-700"
     >
@@ -295,13 +298,13 @@ function CurrentTurnDisplay({ turn, t }: { turn: TurnDTO, t: any }) {
       ) : (
          <div className="animate-fadeIn">
             <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-2 font-semibold">{t("yourRole")}</h3>
-            <div className="text-5xl font-black mb-8 tracking-wider">
+            <div data-testid="role-display" className="text-5xl font-black mb-8 tracking-wider">
               {isImpostor ? <span className="text-red-500 drop-shadow-md">IMPOSTOR</span> : <span className="text-blue-400 drop-shadow-md">CIVILIAN</span>}
             </div>
             
             <div className="border-t border-slate-700 pt-8">
               <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-4 font-semibold">{t("yourSecretWord")}</h3>
-              <div className="text-4xl font-mono bg-slate-900 inline-block px-8 py-4 rounded-lg border border-slate-700 shadow-inner">
+              <div data-testid="secret-word-display" className="text-4xl font-mono bg-slate-900 inline-block px-8 py-4 rounded-lg border border-slate-700 shadow-inner">
                  {isImpostor ? <span className="tracking-widest">???</span> : turn.word}
               </div>
               {isImpostor ? (
