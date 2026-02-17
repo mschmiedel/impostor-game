@@ -1,0 +1,150 @@
+
+openapi: 3.0.0
+info:
+  title: Impostor Game API
+  version: 1.0.0
+paths:
+  /api/createGame:
+    post:
+      summary: Create a new game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ageOfYoungestPlayer
+                - creatorName
+              properties:
+                ageOfYoungestPlayer:
+                  type: integer
+                creatorName:
+                  type: string
+                language:
+                  type: string
+                  description: "Language code for the game (e.g., 'de-DE', 'en-US'). Default: 'de-DE'"
+      responses:
+        '201':
+          description: Game created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gameId:
+                    type: string
+                  status:
+                    type: string
+                  adminPwd:
+                    type: string
+                  playerId:
+                    type: string
+                  language:
+                    type: string
+  /api/joinGame/{gameId}:
+    post:
+      summary: Join an existing game
+      parameters:
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - playerName
+              properties:
+                playerName:
+                  type: string
+      responses:
+        '200':
+          description: Joined successfully
+        '404':
+          description: Game not found
+  /api/getGameDetails/{gameId}:
+    get:
+      summary: Get game details
+      parameters:
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: adminPwd
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Game details
+        '401':
+          description: Unauthorized
+        '404':
+          description: Game not found
+  /api/startGame/{gameId}:
+    post:
+      summary: Start the game
+      parameters:
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: adminPwd
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Game started
+  /api/nextTurn/{gameId}:
+    post:
+      summary: Start next turn
+      description: "Generates a new word based on game language and age. Does NOT change game status to FINISHED."
+      parameters:
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: adminPwd
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Turn started
+  /api/finishGame/{gameId}:
+    post:
+      summary: Finish the game
+      parameters:
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: adminPwd
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Game finished
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "FINISHED"

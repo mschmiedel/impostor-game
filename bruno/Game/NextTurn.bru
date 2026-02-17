@@ -1,0 +1,16 @@
+
+meta {
+  name: Next Turn
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/nextTurn/{{gameId}}?adminPwd={{adminPwd}}
+  body: none
+  auth: none
+}
+
+params:query {
+  adminPwd: {{adminPwd}}
+}

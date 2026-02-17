@@ -1,0 +1,17 @@
+meta {
+  name: FinishGame
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/finishGame/{{gameId}}?adminPwd={{adminPwd}}
+  body: none
+  auth: none
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar("gameStatus", res.body.status);
+  }
+}

@@ -1,0 +1,36 @@
+# Goose Project Instructions: Next.js Hexagonal Architecture
+
+## 1. Architektur-Stil: Hexagonal (Ports & Adapters)
+Alle Logik muss strikt nach der Hexagonalen Architektur getrennt werden:
+- **Domain:** Reine Geschäftslogik und Entities (keine Abhängigkeiten nach außen).
+- **Application (Ports):** Interfaces für Use-Cases und externe Services.
+- **Infrastructure (Adapters):** - `adapters/redis`: Implementierung der Redis-Schnittstelle.
+    - `adapters/gemini`: Implementierung der Google Gemini API.
+    - `adapters/web`: Next.js API Routes (dienen nur als Einstiegspunkte).
+
+## 2. Strikte API/Frontend Trennung
+- Das Frontend darf niemals direkt auf die Datenbank oder externe APIs zugreifen.
+- Sämtliche Datenabfrage erfolgt über die Next.js API Routes (`/app/api/...`).
+- Business Logic darf nicht in React-Komponenten stehen.
+
+## 3. Test-Driven Development (TDD) Pflicht
+Bevor Code für einen Endpunkt geschrieben wird, MUSS:
+1. Ein Test-File in `__tests__` oder neben der Route erstellt werden.
+2. Der Test muss die erwartete Funktionalität definieren.
+3. Erst wenn der Test fehlschlägt, darf die Implementierung beginnen.
+4. Framework: Nutze Vitest oder Jest (je nach Projektsetup).
+
+## 4. Externe Integrationen
+- **Redis:** Nutze ein Repository-Pattern. Definiere ein Interface in `application/ports`, implementiere es in `infrastructure/redis`.
+- **Gemini API:** Kapselung in einem Service-Adapter. Nutze Umgebungsvariablen für API-Keys.
+
+## 5. Bruno API Collections
+Für JEDEN neuen oder geänderten API-Endpunkt:
+- Erstelle oder aktualisiere automatisch eine `.bru` Datei im Ordner `/bruno`.
+- Die Datei muss Beispiel-Payloads, Header und Query-Parameter enthalten.
+- Struktur: `/bruno/[Resource]/[EndpointName].bru`.
+
+## 6. Coding Standards
+- Nutze TypeScript mit strikten Typen.
+- Vermeide `any`.
+- Dateinamen: `kebab-case`.

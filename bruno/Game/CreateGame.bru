@@ -1,0 +1,26 @@
+meta {
+  name: CreateGame
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/createGame
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "ageOfYoungestPlayer": 10,
+    "creatorName": "HostPlayer",
+    "language": "de-DE"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("gameId", res.body.gameId);
+    bru.setEnvVar("adminPwd", res.body.adminPwd);
+  }
+}

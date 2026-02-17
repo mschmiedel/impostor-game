@@ -1,0 +1,15 @@
+meta {
+  name: GetGameDetails
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/getGameDetails/{{gameId}}?adminPwd={{adminPwd}}
+  body: none
+  auth: none
+}
+
+params:query {
+  adminPwd: {{adminPwd}}
+}

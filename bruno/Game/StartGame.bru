@@ -1,0 +1,16 @@
+
+meta {
+  name: Start Game
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/startGame/{{gameId}}?adminPwd={{adminPwd}}
+  body: none
+  auth: none
+}
+
+params:query {
+  adminPwd: {{adminPwd}}
+}
