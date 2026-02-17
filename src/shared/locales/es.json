@@ -48,5 +48,8 @@
   "gameNotFound": "Juego no encontrado",
   "joining": "Uniéndose...",
   "error": "Error",
-  "checkHistory": "Revisa el historial para ver detalles."
+  "checkHistory": "Revisa el historial para ver detalles.",
+  "tapToReveal": "Toca para revelar",
+  "tapToRevealDesc": "Muestra por 2s",
+  "round": "Ronda"
 }

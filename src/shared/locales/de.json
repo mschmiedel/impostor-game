@@ -48,5 +48,8 @@
   "gameNotFound": "Spiel nicht gefunden",
   "joining": "Beitreten...",
   "error": "Fehler",
-  "checkHistory": "Überprüfe den Verlauf für Details."
+  "checkHistory": "Überprüfe den Verlauf für Details.",
+  "tapToReveal": "Antippen zum Aufdecken",
+  "tapToRevealDesc": "Zeigt Rolle für 2s",
+  "round": "Runde"
 }
