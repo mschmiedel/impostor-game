@@ -12,15 +12,15 @@ jest.mock('ioredis', () => require('ioredis-mock'));
 describe('POST /api/startGame/:gameId', () => {
   const repo = new RedisGameRepository();
   const gameId = 'test-game-start';
-  const adminPwd = 'admin-password';
+  const playerSecret = 'host-secret';
+  const playerId = 'host-id';
 
   beforeEach(async () => {
     const game: Game = {
       gameId,
-      adminPwd,
       ageOfYoungestPlayer: 10,
       status: 'JOINING',
-      players: [{ id: 'host', name: 'Host' }],
+      players: [{ id: playerId, name: 'Host', role: 'HOST', secret: playerSecret }],
       turns: [],
       createdAt: Date.now(),
     };
@@ -28,8 +28,11 @@ describe('POST /api/startGame/:gameId', () => {
   });
 
   it('should start the game and return 200 with status STARTED', async () => {
-    const req = new NextRequest(`http://localhost/api/startGame/${gameId}?adminPwd=${adminPwd}`, {
+    const req = new NextRequest(`http://localhost/api/startGame/${gameId}`, {
       method: 'POST',
+      headers: {
+          'x-player-secret': playerSecret
+      }
     });
 
     const response = await POST(req, { params: { gameId } });
@@ -42,11 +45,14 @@ describe('POST /api/startGame/:gameId', () => {
     expect(updatedGame?.status).toBe('STARTED');
   });
 
-  it('should return 401 if adminPwd is wrong', async () => {
-    const req = new NextRequest(`http://localhost/api/startGame/${gameId}?adminPwd=wrong`, {
+  it('should return 401/403 if player secret is wrong', async () => {
+    const req = new NextRequest(`http://localhost/api/startGame/${gameId}`, {
       method: 'POST',
+      headers: {
+          'x-player-secret': 'wrong'
+      }
     });
     const response = await POST(req, { params: { gameId } });
-    expect(response.status).toBe(401);
+    expect([401, 403]).toContain(response.status);
   });
 });

@@ -12,16 +12,17 @@ jest.mock('ioredis', () => require('ioredis-mock'));
 describe('POST /api/finishGame/:gameId', () => {
   const repo = new RedisGameRepository();
   const gameId = 'test-game-finish';
-  const adminPwd = 'admin-pwd-finish';
+  const playerSecret = 'host-secret';
+  const playerId = 'host-id';
 
   beforeEach(async () => {
     const game: Game = {
       gameId,
-      adminPwd,
+      // adminPwd removed
       ageOfYoungestPlayer: 10,
       language: 'de-DE',
       status: 'STARTED',
-      players: [{ id: 'p1', name: 'Host' }],
+      players: [{ id: playerId, name: 'Host', role: 'HOST', secret: playerSecret }],
       turns: [],
       createdAt: Date.now(),
     };
@@ -29,8 +30,11 @@ describe('POST /api/finishGame/:gameId', () => {
   });
 
   it('should finish the game and return status FINISHED', async () => {
-    const req = new NextRequest(`http://localhost/api/finishGame/${gameId}?adminPwd=${adminPwd}`, {
+    const req = new NextRequest(`http://localhost/api/finishGame/${gameId}`, {
       method: 'POST',
+      headers: {
+          'x-player-secret': playerSecret
+      }
     });
 
     const response = await POST(req, { params: { gameId } });
@@ -43,17 +47,23 @@ describe('POST /api/finishGame/:gameId', () => {
     expect(updatedGame?.status).toBe('FINISHED');
   });
 
-  it('should return 401 if adminPwd is missing or wrong', async () => {
-    const req = new NextRequest(`http://localhost/api/finishGame/${gameId}?adminPwd=wrong`, {
+  it('should return 401/403 if player secret is missing or wrong', async () => {
+    const req = new NextRequest(`http://localhost/api/finishGame/${gameId}`, {
       method: 'POST',
+      headers: {
+          'x-player-secret': 'wrong'
+      }
     });
     const response = await POST(req, { params: { gameId } });
-    expect(response.status).toBe(401);
+    expect([401, 403]).toContain(response.status);
   });
 
   it('should return 404 if game does not exist', async () => {
-    const req = new NextRequest(`http://localhost/api/finishGame/fake?adminPwd=${adminPwd}`, {
+    const req = new NextRequest(`http://localhost/api/finishGame/fake`, {
       method: 'POST',
+      headers: {
+          'x-player-secret': playerSecret
+      }
     });
     const response = await POST(req, { params: { gameId: 'fake' } });
     expect(response.status).toBe(404);
