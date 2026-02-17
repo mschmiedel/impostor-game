@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useLanguage } from "@/shared/i18n/LanguageContext";
+import { useLanguage, Locale } from "@/shared/i18n/LanguageContext";
 
 export default function Home() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function Home() {
   ];
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newLang = e.target.value;
+    const newLang = e.target.value as Locale;
     setLanguage(newLang); // Update global UI language
     // Form data will be updated via useEffect
   };
@@ -108,12 +108,6 @@ export default function Home() {
                 onChange={(e) => setFormData({...formData, ageOfYoungestPlayer: parseInt(e.target.value)})}
               />
             </div>
-
-            {/* Language input is now hidden/handled via the global selector, but we still display it in the form context? 
-                Actually, the requirement is to move it to the top corner. 
-                So we can remove it from the form body to avoid duplication, 
-                as the top right selector controls both UI and the game language setting.
-            */}
 
             <button
               type="submit"

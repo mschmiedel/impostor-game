@@ -8,7 +8,7 @@ import es from '../locales/es.json';
 import fr from '../locales/fr.json';
 import it from '../locales/it.json';
 
-type Locale = 'de-DE' | 'en-US' | 'es-ES' | 'fr-FR' | 'it-IT';
+export type Locale = 'de-DE' | 'en-US' | 'es-ES' | 'fr-FR' | 'it-IT';
 type Translations = typeof de;
 
 const translations: Record<Locale, Translations> = {
