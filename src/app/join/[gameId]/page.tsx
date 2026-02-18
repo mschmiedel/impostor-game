@@ -59,12 +59,13 @@ export default function JoinGame() {
 
         <form onSubmit={handleJoin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t("yourName")} (Join)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("yourName")}</label>
             <input
               data-testid="join-player-name-input"
               type="text"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border text-gray-900 dark:text-white bg-white dark:bg-slate-700"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border text-gray-900 dark:text-white bg-white dark:bg-slate-700 dark:placeholder-gray-400 transition-colors"
+              placeholder={t("yourName")}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
