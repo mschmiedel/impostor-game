@@ -1,16 +1,15 @@
-
 meta {
   name: Start Game
   type: http
-  seq: 1
+  seq: 3
 }
 
 post {
-  url: {{baseUrl}}/api/startGame/{{gameId}}?adminPwd={{adminPwd}}
+  url: {{baseUrl}}/api/startGame/{{gameId}}
   body: none
   auth: none
 }
 
-params:query {
-  adminPwd: {{adminPwd}}
+headers {
+  x-player-secret: {{hostSecret}}
 }

@@ -1,0 +1,18 @@
+meta {
+  name: Join Game With Code
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/joinGame
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "joinCode": "1234",
+    "playerName": "Player 2"
+  }
+}

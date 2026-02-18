@@ -1,13 +1,13 @@
-
 import { GameRepository } from '@/domain/ports/GameRepository';
 import { Game } from '@/domain/entities/Game';
 
 export interface StartGameInput {
   gameId: string;
-  playerSecret: string;
+  playerSecret: string; // Changed from playerId to secret for security/consistency with route
 }
 
 export interface StartGameOutput {
+  gameId: string;
   status: string;
 }
 
@@ -16,20 +16,44 @@ export class StartGameUseCase {
 
   async execute(input: StartGameInput): Promise<StartGameOutput> {
     const game = await this.gameRepo.findById(input.gameId);
-    
+
     if (!game) {
       throw new Error("Game not found");
     }
 
-    const player = game.players.find(p => p.secret === input.playerSecret);
-    if (!player || player.role !== 'HOST') {
-      throw new Error("Unauthorized");
+    if (game.status !== 'JOINING') {
+      throw new Error("Game is not in JOINING state");
     }
 
-    // Spec says: "Set game status to STARTED in redis"
+    // Verify player is HOST using secret
+    const player = game.players.find(p => p.secret === input.playerSecret);
+    
+    if (!player) {
+      throw new Error("Unauthorized"); // Invalid secret
+    }
+    
+    if (player.role !== 'HOST') {
+      throw new Error("Only the HOST can start the game");
+    }
+
+    // Change status
     game.status = 'STARTED';
+    
+    // Remove join code from Game entity
+    const codeToDelete = game.joinCode;
+    delete game.joinCode;
+
+    // Save game (updates status in Redis)
     await this.gameRepo.save(game);
 
-    return { status: 'STARTED' };
+    // Explicitly delete join code from Redis if it existed
+    if (codeToDelete) {
+      await this.gameRepo.deleteJoinCode(codeToDelete);
+    }
+
+    return {
+      gameId: game.gameId,
+      status: game.status
+    };
   }
 }

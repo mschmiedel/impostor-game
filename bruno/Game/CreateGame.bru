@@ -1,5 +1,5 @@
 meta {
-  name: CreateGame
+  name: Create Game
   type: http
   seq: 1
 }
@@ -12,15 +12,14 @@ post {
 
 body:json {
   {
-    "ageOfYoungestPlayer": 10,
     "creatorName": "HostPlayer",
-    "language": "es-MX"
+    "ageOfYoungestPlayer": 10,
+    "language": "de-DE"
   }
 }
 
-script:post-response {
-  if (res.status === 201) {
-    bru.setEnvVar("gameId", res.body.gameId);
-    bru.setEnvVar("adminSecret", res.body.playerSecret);
-  }
+vars:post-response {
+  gameId: res.body.gameId
+  hostSecret: res.body.playerSecret
+  joinCode: res.body.joinCode
 }
