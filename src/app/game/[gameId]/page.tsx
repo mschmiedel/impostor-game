@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { QRCodeSVG } from 'qrcode.react';
 import { useLanguage } from "@/shared/i18n/LanguageContext";
@@ -115,9 +115,9 @@ export default function GameRoom() {
   const nextTurn = () => apiCall("nextTurn");
   const finishGame = () => apiCall("finishGame");
 
-  if (loading && !game) return <div className="p-10 text-center">{t("loadingGame")}</div>;
-  if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
-  if (!game) return <div className="p-10 text-center">{t("noData")}</div>;
+  if (loading && !game) return <div className="p-10 text-center dark:text-gray-200">{t("loadingGame")}</div>;
+  if (error) return <div className="p-10 text-center text-red-600 dark:text-red-400">{error}</div>;
+  if (!game) return <div className="p-10 text-center dark:text-gray-200">{t("noData")}</div>;
 
   const me = game.players.find(p => p.isMe);
   const isHost = me?.role === 'HOST';
@@ -126,34 +126,35 @@ export default function GameRoom() {
   const pastTurns = game.turns.filter(t => !t.isCurrent);
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 relative min-h-[50vh]">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
-        <h1 className="text-2xl font-bold text-indigo-600">{t("room")}: {gameId.substring(0,8)}...</h1>
+    <div className="max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-xl shadow-md overflow-hidden p-6 relative min-h-[50vh] transition-colors duration-200">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 border-b dark:border-slate-700 pb-4 gap-4">
+        <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{t("room")}: {gameId.substring(0,8)}...</h1>
         <div className="flex gap-2 items-center flex-wrap justify-center">
             <button 
+              data-testid="toggle-history-btn"
               onClick={() => setShowHistory(!showHistory)} 
-              className="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded transition-colors"
+              className="text-sm bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 px-3 py-1 rounded transition-colors"
             >
                {showHistory ? t("hideHistory") : t("showHistory")}
             </button>
-            <div className="text-sm font-mono bg-gray-100 p-2 rounded">
-              {t("status")}: <span className={game.status === 'STARTED' ? 'text-green-600' : 'text-blue-600'}>{game.status}</span>
+            <div className="text-sm font-mono bg-gray-100 dark:bg-slate-800 dark:text-gray-300 p-2 rounded">
+              {t("status")}: <span data-testid="game-status" className={game.status === 'STARTED' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}>{game.status}</span>
             </div>
         </div>
       </div>
 
       {showHistory && (
-         <div className="mb-6 bg-gray-50 p-4 rounded border animate-fadeIn">
-            <h3 className="font-bold mb-2">{t("pastTurns")}</h3>
-            {pastTurns.length === 0 ? <p className="text-gray-500 text-sm">{t("noPastTurns")}</p> : (
-               <ul className="space-y-2 text-sm max-h-60 overflow-y-auto">
+         <div data-testid="history-container" className="mb-6 bg-gray-50 dark:bg-slate-800 p-4 rounded border dark:border-slate-700 animate-fadeIn">
+            <h3 className="font-bold mb-2 dark:text-gray-200">{t("pastTurns")}</h3>
+            {pastTurns.length === 0 ? <p className="text-gray-500 dark:text-gray-400 text-sm">{t("noPastTurns")}</p> : (
+               <ul className="space-y-2 text-sm max-h-60 overflow-y-auto custom-scrollbar">
                   {pastTurns.map((turn, idx) => (
-                     <li key={idx} className="border-b pb-2 last:border-0">
-                        <span className="font-semibold text-indigo-700">{t("turn")} {idx + 1}:</span> {t("word")}: <strong>{turn.word || "???"}</strong>. 
+                     <li key={idx} className="border-b dark:border-slate-700 pb-2 last:border-0 dark:text-gray-300">
+                        <span className="font-semibold text-indigo-700 dark:text-indigo-400">{t("turn")} {idx + 1}:</span> {t("word")}: <strong>{turn.word || "???"}</strong>. 
                         <br/>
                         {turn.impostors && (
                              <>
-                                <span className="text-red-600">{t("impostor")}:</span> 
+                                <span className="text-red-600 dark:text-red-400">{t("impostor")}:</span> 
                                 {game.players.filter(p => turn.impostors?.includes(p.id)).map(p => p.name).join(", ")}. 
                              </>
                         )}
@@ -166,24 +167,25 @@ export default function GameRoom() {
 
       {game.status === 'JOINING' && (
         <div className="text-center py-10">
-          <h2 className="text-xl mb-4">{t("waitingForPlayers")}</h2>
+          <h2 className="text-xl mb-4 dark:text-gray-200">{t("waitingForPlayers")}</h2>
           <div className="flex flex-wrap gap-4 justify-center mb-8">
             {game.players.map(p => (
-              <div key={p.id} className="bg-gray-50 px-6 py-3 rounded shadow-sm flex items-center justify-center border border-gray-200">
-                <span className={p.isMe ? "font-bold text-indigo-600" : "text-gray-700"}>{p.name} {p.isMe ? t("you") : ""} {p.role === 'HOST' ? "👑" : ""}</span>
+              <div key={p.id} data-testid={`player-badge-${p.id}`} className="bg-gray-50 dark:bg-slate-800 px-6 py-3 rounded shadow-sm flex items-center justify-center border border-gray-200 dark:border-slate-700">
+                <span className={p.isMe ? "font-bold text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"}>{p.name} {p.isMe ? t("you") : ""} {p.role === 'HOST' ? "👑" : ""}</span>
               </div>
             ))}
           </div>
           
           <div className="flex gap-4 justify-center flex-col sm:flex-row items-center">
-             <button onClick={() => navigator.clipboard.writeText(window.location.href)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
+             <button data-testid="copy-link-btn" onClick={() => navigator.clipboard.writeText(window.location.href)} className="bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
                 {t("copyLink")}
              </button>
-             <button onClick={() => setShowQR(!showQR)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
+             <button data-testid="toggle-qr-btn" onClick={() => setShowQR(!showQR)} className="bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
                 {showQR ? t("hideQR") : t("showQR")}
              </button>
              {isHost && (
                 <button 
+                  data-testid="start-game-btn"
                   onClick={startGame}
                   disabled={game.players.length < 3}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
@@ -194,7 +196,8 @@ export default function GameRoom() {
           </div>
           
           {showQR && currentUrl && (
-             <div className="mt-6 flex justify-center animate-fadeIn p-4 bg-white rounded-lg border shadow-sm inline-block">
+             <div data-testid="qr-code-container" className="mt-6 flex justify-center animate-fadeIn p-4 bg-white dark:bg-white rounded-lg border shadow-sm inline-block">
+                {/* QR Code always needs white background to be scannable */}
                 <QRCodeSVG value={currentUrl} size={150} />
                 <p className="mt-2 text-xs text-gray-500">{t("scanMe")}</p>
              </div>
@@ -207,38 +210,41 @@ export default function GameRoom() {
       {(game.status === 'STARTED' || game.status === 'FINISHED') && (
         <div>
           <div className="mb-8">
-             <h2 className="text-xl font-bold mb-4 text-center">{t("currentTurn")}</h2>
+             <h2 className="text-xl font-bold mb-4 text-center dark:text-gray-200">
+                {t("currentTurn")}
+                {game.turns.length > 0 && <span className="ml-2 text-indigo-600 dark:text-indigo-400 text-lg font-normal">({t("round")} {game.turns.length})</span>}
+             </h2>
              
              {currentTurn ? (
                 <CurrentTurnDisplay turn={currentTurn} t={t} />
              ) : (
                  game.status === 'FINISHED' ? (
-                    <div className="text-center p-4 bg-gray-100 rounded">
-                        <p className="font-bold text-lg">{t("gameOver")}</p>
-                        <p>{t("checkHistory")}</p>
+                    <div className="text-center p-4 bg-gray-100 dark:bg-slate-800 rounded">
+                        <p className="font-bold text-lg dark:text-gray-200">{t("gameOver")}</p>
+                        <p className="dark:text-gray-400">{t("checkHistory")}</p>
                     </div>
                  ) : (
-                    <div className="text-gray-500 italic text-center animate-pulse">{t("waitingForTurn")}</div>
+                    <div className="text-gray-500 dark:text-gray-400 italic text-center animate-pulse">{t("waitingForTurn")}</div>
                  )
              )}
           </div>
 
           {isHost && game.status !== 'FINISHED' && (
-            <div className="flex gap-4 border-t pt-6 justify-center">
-               <button onClick={nextTurn} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded shadow-lg transition-transform hover:scale-105">
+            <div className="flex gap-4 border-t dark:border-slate-700 pt-6 justify-center">
+               <button data-testid="next-turn-btn" onClick={nextTurn} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded shadow-lg transition-transform hover:scale-105">
                  {t("nextTurn")}
                </button>
-               <button onClick={finishGame} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded shadow-lg transition-transform hover:scale-105">
+               <button data-testid="finish-game-btn" onClick={finishGame} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded shadow-lg transition-transform hover:scale-105">
                  {t("endGame")}
                </button>
             </div>
           )}
           
            {game.status === 'FINISHED' && (
-              <div className="text-center py-6 bg-yellow-50 text-yellow-800 rounded-lg border border-yellow-200 mt-4 shadow-sm">
+              <div className="text-center py-6 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 rounded-lg border border-yellow-200 dark:border-yellow-700 mt-4 shadow-sm">
                 <p className="text-lg font-bold">{t("gameEnded")}</p>
                 <p className="mb-4">{t("hopeFun")}</p>
-                <button onClick={() => router.push('/')} className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors">{t("newGame")}</button>
+                <button data-testid="new-game-btn" onClick={() => router.push('/')} className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors">{t("newGame")}</button>
               </div>
            )}
         </div>
@@ -248,26 +254,67 @@ export default function GameRoom() {
 }
 
 function CurrentTurnDisplay({ turn, t }: { turn: TurnDTO, t: any }) {
+  const [isRevealed, setIsRevealed] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isImpostor = turn.role === 'IMPOSTOR';
 
+  const handleReveal = () => {
+    if (isRevealed) return; // Already revealed
+
+    setIsRevealed(true);
+    
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Hide after 2 seconds
+    timeoutRef.current = setTimeout(() => {
+      setIsRevealed(false);
+    }, 2000);
+  };
+
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="bg-slate-800 text-white p-8 rounded-xl text-center shadow-2xl max-w-lg mx-auto transform transition-all">
-      <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-2 font-semibold">{t("yourRole")}</h3>
-      <div className="text-5xl font-black mb-8 tracking-wider">
-        {isImpostor ? <span className="text-red-500 drop-shadow-md">IMPOSTOR</span> : <span className="text-blue-400 drop-shadow-md">CIVILIAN</span>}
-      </div>
-      
-      <div className="border-t border-slate-700 pt-8">
-        <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-4 font-semibold">{t("yourSecretWord")}</h3>
-        <div className="text-4xl font-mono bg-slate-900 inline-block px-8 py-4 rounded-lg border border-slate-700 shadow-inner">
-           {isImpostor ? <span className="tracking-widest">???</span> : turn.word}
-        </div>
-        {isImpostor ? (
-            <p className="mt-4 text-sm text-red-300 font-medium">{t("findOthers")}</p>
-        ) : (
-            <p className="mt-4 text-sm text-blue-300 font-medium">{t("findImpostor")}</p>
-        )}
-      </div>
+    <div 
+      data-testid="reveal-card"
+      onClick={handleReveal}
+      className="relative bg-slate-800 text-white p-8 rounded-xl text-center shadow-2xl max-w-lg mx-auto transform transition-all cursor-pointer overflow-hidden min-h-[300px] flex flex-col justify-center select-none dark:border dark:border-slate-700"
+    >
+      {!isRevealed ? (
+         <div className="absolute inset-0 bg-indigo-900 flex flex-col items-center justify-center z-10 transition-opacity duration-300">
+            <span className="text-6xl mb-4">👆</span>
+            <p className="text-xl font-bold uppercase tracking-widest">{t("tapToReveal")}</p>
+            <p className="text-sm text-indigo-300 mt-2">({t("tapToRevealDesc")})</p>
+         </div>
+      ) : (
+         <div className="animate-fadeIn">
+            <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-2 font-semibold">{t("yourRole")}</h3>
+            <div data-testid="role-display" className="text-5xl font-black mb-8 tracking-wider">
+              {isImpostor ? <span className="text-red-500 drop-shadow-md">IMPOSTOR</span> : <span className="text-blue-400 drop-shadow-md">CIVILIAN</span>}
+            </div>
+            
+            <div className="border-t border-slate-700 pt-8">
+              <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-4 font-semibold">{t("yourSecretWord")}</h3>
+              <div data-testid="secret-word-display" className="text-4xl font-mono bg-slate-900 inline-block px-8 py-4 rounded-lg border border-slate-700 shadow-inner">
+                 {isImpostor ? <span className="tracking-widest">???</span> : turn.word}
+              </div>
+              {isImpostor ? (
+                  <p className="mt-4 text-sm text-red-300 font-medium">{t("findOthers")}</p>
+              ) : (
+                  <p className="mt-4 text-sm text-blue-300 font-medium">{t("findImpostor")}</p>
+              )}
+            </div>
+         </div>
+      )}
     </div>
   );
 }
