@@ -23,6 +23,7 @@ type TurnDTO = {
 
 type GameDTO = {
   gameId: string;
+  joinCode?: string;
   status: "JOINING" | "STARTED" | "FINISHED";
   players: PlayerDTO[];
   turns: TurnDTO[];
@@ -176,6 +177,15 @@ export default function GameRoom() {
             ))}
           </div>
           
+          {game.joinCode && (
+            <div className="mb-6">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t("joinCode")}</p>
+              <div data-testid="join-code-display" className="text-5xl font-mono font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
+                {game.joinCode}
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-4 justify-center flex-col sm:flex-row items-center">
              <button data-testid="copy-link-btn" onClick={() => navigator.clipboard.writeText(window.location.href)} className="bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center justify-center transition-colors">
                 {t("copyLink")}

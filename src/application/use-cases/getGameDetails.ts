@@ -24,6 +24,7 @@ export interface TurnDTO {
 
 export interface GameDTO {
   gameId: string;
+  joinCode?: string;
   status: GameStatus;
   players: PlayerDTO[];
   turns: TurnDTO[];
@@ -101,6 +102,7 @@ export class GetGameDetailsUseCase {
 
     return {
       gameId: game.gameId,
+      ...(game.status === 'JOINING' && game.joinCode ? { joinCode: game.joinCode } : {}),
       status: game.status,
       players: playersDTO,
       turns: turnsDTO,
