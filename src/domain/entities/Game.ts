@@ -8,9 +8,9 @@ export interface Player {
 }
 
 export interface Turn {
-    playerId: string;
-    action: string;
-    timestamp: number;
+    word: string;
+    impostors: string[];
+    civilians: string[];
 }
 
 export interface Game {

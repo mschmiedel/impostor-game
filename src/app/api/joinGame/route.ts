@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { JoinGameUseCase } from '@/application/use-cases/JoinGame';
+import { JoinGameUseCase } from '@/application/use-cases/joinGame';
 import { RedisGameRepository } from '@/infrastructure/adapters/redis/RedisGameRepository';
 
 // Initialize repo and use case
