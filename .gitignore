@@ -38,3 +38,5 @@ bruno/environments/*.bru
 !bruno/environments/*.bru.example
 
 .idea
+
+test-results

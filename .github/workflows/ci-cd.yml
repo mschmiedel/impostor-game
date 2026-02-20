@@ -31,8 +31,38 @@ jobs:
         env:
           GOOGLE_API_KEY: "mock-key-for-ci"
 
-  build-and-push:
+  e2e-test:
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Start app and Redis
+        run: docker compose -f compose.e2e.yml up -d --build --wait
+        timeout-minutes: 5
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+
+      - name: Stop containers
+        if: always()
+        run: docker compose -f compose.e2e.yml down
+
+  build-and-push:
+    needs: [test, e2e-test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
