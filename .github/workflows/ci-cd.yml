@@ -123,6 +123,8 @@ jobs:
 
       - name: Stop containers
         if: always()
+        env:
+          APP_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image-tag }}
         run: docker compose -f compose.e2e.yml down
 
   tag-latest:
