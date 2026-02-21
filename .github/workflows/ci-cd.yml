@@ -52,7 +52,11 @@ jobs:
 
       - name: Start app and Redis
         run: docker compose -f compose.e2e.yml up -d --build --wait
-        timeout-minutes: 5
+        timeout-minutes: 10
+
+      - name: Print app logs on failure
+        if: failure()
+        run: docker compose -f compose.e2e.yml logs app
 
       - name: Run e2e tests
         run: npm run test:e2e
