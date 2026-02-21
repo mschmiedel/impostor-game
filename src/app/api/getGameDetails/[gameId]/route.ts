@@ -8,17 +8,18 @@ const getGameDetailsUseCase = new GetGameDetailsUseCase(gameRepo);
 
 export async function GET(
   request: Request,
-  { params }: { params: { gameId: string } }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
   const playerSecret = request.headers.get('x-player-secret');
-  
+  const { gameId } = await params;
+
   try {
     if (!playerSecret) {
       return NextResponse.json({ error: 'Player secret is required' }, { status: 401 });
     }
 
     const game = await getGameDetailsUseCase.execute({
-      gameId: params.gameId,
+      gameId,
       playerSecret
     });
 

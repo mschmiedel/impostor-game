@@ -37,7 +37,7 @@ describe('GET /api/getGameDetails/[gameId]', () => {
 
   it('should retrieve game details with correct player secret', async () => {
     const { gameId, playerSecret } = createdGame;
-    const res = await GET(makeGetRequest(gameId, playerSecret), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, playerSecret), { params: Promise.resolve({ gameId }) });
     const json = await res.json();
 
     expect(res.status).toBe(200);
@@ -49,13 +49,13 @@ describe('GET /api/getGameDetails/[gameId]', () => {
 
   it('should return 401/403 with incorrect player secret', async () => {
     const { gameId } = createdGame;
-    const res = await GET(makeGetRequest(gameId, 'wrong-secret'), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, 'wrong-secret'), { params: Promise.resolve({ gameId }) });
     expect([401, 403]).toContain(res.status);
   });
 
   it('should return 404 for non-existent game', async () => {
     const gameId = 'non-existent-id';
-    const res = await GET(makeGetRequest(gameId, 'some-secret'), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, 'some-secret'), { params: Promise.resolve({ gameId }) });
     expect(res.status).toBe(404);
   });
 });
@@ -82,7 +82,7 @@ describe('GET /api/getGameDetails - isMe flag', () => {
   });
 
   it('should mark only the requesting player as isMe', async () => {
-    const res = await GET(makeGetRequest(gameId, playerSecret), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, playerSecret), { params: Promise.resolve({ gameId }) });
     const json = await res.json();
 
     const me = json.players.find((p: any) => p.name === 'Player');
@@ -111,13 +111,13 @@ describe('GET /api/getGameDetails - joinCode visibility', () => {
   });
 
   it('should include joinCode when status is JOINING', async () => {
-    const res = await GET(makeGetRequest(joiningGameId, secret), { params: { gameId: joiningGameId } });
+    const res = await GET(makeGetRequest(joiningGameId, secret), { params: Promise.resolve({ gameId: joiningGameId }) });
     const json = await res.json();
     expect(json.joinCode).toBe('1234');
   });
 
   it('should not include joinCode when status is STARTED', async () => {
-    const res = await GET(makeGetRequest(startedGameId, secret), { params: { gameId: startedGameId } });
+    const res = await GET(makeGetRequest(startedGameId, secret), { params: Promise.resolve({ gameId: startedGameId }) });
     const json = await res.json();
     expect(json.joinCode).toBeUndefined();
   });
@@ -150,7 +150,7 @@ describe('GET /api/getGameDetails - word visibility in active turn', () => {
   });
 
   it('should show the word to a civilian in the active turn', async () => {
-    const res = await GET(makeGetRequest(gameId, civilianSecret), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, civilianSecret), { params: Promise.resolve({ gameId }) });
     const json = await res.json();
     const turn = json.turns[0];
 
@@ -160,7 +160,7 @@ describe('GET /api/getGameDetails - word visibility in active turn', () => {
   });
 
   it('should hide the word from an impostor in the active turn', async () => {
-    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: Promise.resolve({ gameId }) });
     const json = await res.json();
     const turn = json.turns[0];
 
@@ -170,7 +170,7 @@ describe('GET /api/getGameDetails - word visibility in active turn', () => {
   });
 
   it('should not reveal impostors/civilians lists in the active turn', async () => {
-    const res = await GET(makeGetRequest(gameId, civilianSecret), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, civilianSecret), { params: Promise.resolve({ gameId }) });
     const json = await res.json();
     const turn = json.turns[0];
 
@@ -205,7 +205,7 @@ describe('GET /api/getGameDetails - finished game reveals everything', () => {
   });
 
   it('should reveal the word to the impostor when game is finished', async () => {
-    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: Promise.resolve({ gameId }) });
     const json = await res.json();
     const turn = json.turns[0];
 
@@ -214,7 +214,7 @@ describe('GET /api/getGameDetails - finished game reveals everything', () => {
   });
 
   it('should reveal impostors and civilians lists when game is finished', async () => {
-    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: Promise.resolve({ gameId }) });
     const json = await res.json();
     const turn = json.turns[0];
 
@@ -250,7 +250,7 @@ describe('GET /api/getGameDetails - multi-turn game', () => {
   });
 
   it('should reveal word and roles for past turns even for the impostor', async () => {
-    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: Promise.resolve({ gameId }) });
     const json = await res.json();
     const pastTurn = json.turns[0];
 
@@ -261,7 +261,7 @@ describe('GET /api/getGameDetails - multi-turn game', () => {
   });
 
   it('should hide word and roles for the current (last) turn from the impostor', async () => {
-    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: { gameId } });
+    const res = await GET(makeGetRequest(gameId, impostorSecret), { params: Promise.resolve({ gameId }) });
     const json = await res.json();
     const currentTurn = json.turns[1];
 

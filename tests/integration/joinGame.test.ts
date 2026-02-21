@@ -48,7 +48,7 @@ describe('POST /api/joinGame/:gameId - join by gameId', () => {
   });
 
   it('should add the player and return 200 with playerId', async () => {
-    const response = await postByGameId(makeJoinByIdRequest(gameId, 'Alice'), { params: { gameId } });
+    const response = await postByGameId(makeJoinByIdRequest(gameId, 'Alice'), { params: Promise.resolve({ gameId }) });
     const json = await response.json();
 
     expect(response.status).toBe(200);
@@ -60,7 +60,7 @@ describe('POST /api/joinGame/:gameId - join by gameId', () => {
   });
 
   it('should return 404 if game does not exist', async () => {
-    const response = await postByGameId(makeJoinByIdRequest('no-such-game', 'Alice'), { params: { gameId: 'no-such-game' } });
+    const response = await postByGameId(makeJoinByIdRequest('no-such-game', 'Alice'), { params: Promise.resolve({ gameId: 'no-such-game' }) });
     expect(response.status).toBe(404);
   });
 });
@@ -103,7 +103,7 @@ describe('POST /api/joinGame - game state validation', () => {
     const gameId = 'game-started';
     await repo.save(baseGame({ gameId, status: 'STARTED' }));
 
-    const response = await postByGameId(makeJoinByIdRequest(gameId, 'Alice'), { params: { gameId } });
+    const response = await postByGameId(makeJoinByIdRequest(gameId, 'Alice'), { params: Promise.resolve({ gameId }) });
     expect(response.status).toBe(400);
   });
 
@@ -111,7 +111,7 @@ describe('POST /api/joinGame - game state validation', () => {
     const gameId = 'game-finished-join';
     await repo.save(baseGame({ gameId, status: 'FINISHED' }));
 
-    const response = await postByGameId(makeJoinByIdRequest(gameId, 'Alice'), { params: { gameId } });
+    const response = await postByGameId(makeJoinByIdRequest(gameId, 'Alice'), { params: Promise.resolve({ gameId }) });
     expect(response.status).toBe(400);
   });
 });
@@ -124,7 +124,7 @@ describe('POST /api/joinGame - input validation', () => {
   });
 
   it('should return 400 when playerName is missing', async () => {
-    const response = await postByGameId(makeJoinByIdRequest(gameId, ''), { params: { gameId } });
+    const response = await postByGameId(makeJoinByIdRequest(gameId, ''), { params: Promise.resolve({ gameId }) });
     expect(response.status).toBe(400);
   });
 });
@@ -137,7 +137,7 @@ describe('POST /api/joinGame - player role and response', () => {
   });
 
   it('should assign the PLAYER role to the joining player', async () => {
-    await postByGameId(makeJoinByIdRequest(gameId, 'Carol'), { params: { gameId } });
+    await postByGameId(makeJoinByIdRequest(gameId, 'Carol'), { params: Promise.resolve({ gameId }) });
 
     const updatedGame = await repo.findById(gameId);
     const carol = updatedGame?.players.find(p => p.name === 'Carol');
@@ -146,7 +146,7 @@ describe('POST /api/joinGame - player role and response', () => {
   });
 
   it('should return gameId, playerId and playerSecret in the response', async () => {
-    const response = await postByGameId(makeJoinByIdRequest(gameId, 'Dave'), { params: { gameId } });
+    const response = await postByGameId(makeJoinByIdRequest(gameId, 'Dave'), { params: Promise.resolve({ gameId }) });
     const json = await response.json();
 
     expect(json).toHaveProperty('gameId', gameId);

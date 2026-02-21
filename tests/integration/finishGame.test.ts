@@ -37,7 +37,7 @@ describe('POST /api/finishGame/:gameId', () => {
       }
     });
 
-    const response = await POST(req, { params: { gameId } });
+    const response = await POST(req, { params: Promise.resolve({ gameId }) });
     const json = await response.json();
 
     expect(response.status).toBe(200);
@@ -54,7 +54,7 @@ describe('POST /api/finishGame/:gameId', () => {
           'x-player-secret': 'wrong'
       }
     });
-    const response = await POST(req, { params: { gameId } });
+    const response = await POST(req, { params: Promise.resolve({ gameId }) });
     expect([401, 403]).toContain(response.status);
   });
 
@@ -65,7 +65,7 @@ describe('POST /api/finishGame/:gameId', () => {
           'x-player-secret': playerSecret
       }
     });
-    const response = await POST(req, { params: { gameId: 'fake' } });
+    const response = await POST(req, { params: Promise.resolve({ gameId: 'fake' }) });
     expect(response.status).toBe(404);
   });
 });
