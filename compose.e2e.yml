@@ -1,3 +1,5 @@
+name: impostor-e2e
+
 services:
   app:
     build: .
