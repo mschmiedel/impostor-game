@@ -10,10 +10,10 @@ const nextTurnUseCase = new NextTurnUseCase(gameRepo, wordGen);
 
 export async function POST(
   request: Request,
-  { params }: { params: { gameId: string } }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
   const playerSecret = request.headers.get('x-player-secret');
-  const gameId = params.gameId;
+  const { gameId } = await params;
 
   try {
     if (!playerSecret) {

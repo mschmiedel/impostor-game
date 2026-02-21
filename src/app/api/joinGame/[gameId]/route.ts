@@ -8,11 +8,11 @@ const joinGameUseCase = new JoinGameUseCase(gameRepo);
 
 export async function POST(
   request: Request,
-  { params }: { params: { gameId: string } }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
   try {
     const body = await request.json();
-    const gameId = params.gameId;
+    const { gameId } = await params;
 
     if (!gameId) {
        return NextResponse.json({ error: 'Game ID required' }, { status: 400 });
