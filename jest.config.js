@@ -11,4 +11,16 @@ module.exports = {
       tsconfig: 'tsconfig.json',
     }],
   },
+  collectCoverageFrom: [
+    'src/application/use-cases/**/*.ts',
+  ],
+  coverageReporters: ['text', 'cobertura'],
+  coverageThreshold: {
+    global: {
+      branches: 60,
+      functions: 80,
+      lines: 75,
+      statements: 75,
+    },
+  },
 };
