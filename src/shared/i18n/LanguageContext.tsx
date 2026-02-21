@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import de from '../locales/de.json';
 import en from '../locales/en.json';
 import es from '../locales/es.json';
@@ -28,15 +28,11 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Locale>('de-DE');
-
-  // Load from localStorage on mount (client-side only)
-  useEffect(() => {
+  const [language, setLanguage] = useState<Locale>(() => {
+    if (typeof window === 'undefined') return 'de-DE';
     const storedLang = localStorage.getItem('impostor_language') as Locale;
-    if (storedLang && translations[storedLang]) {
-      setLanguage(storedLang);
-    }
-  }, []);
+    return storedLang && translations[storedLang] ? storedLang : 'de-DE';
+  });
 
   const handleSetLanguage = (lang: Locale) => {
     setLanguage(lang);
