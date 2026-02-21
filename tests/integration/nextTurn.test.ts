@@ -9,7 +9,6 @@ import { NextRequest } from 'next/server';
 
 jest.mock('ioredis', () => require('ioredis-mock'));
 
-// Mock fetch for Gemini
 global.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
@@ -23,11 +22,27 @@ global.fetch = jest.fn(() =>
   })
 ) as jest.Mock;
 
-describe('POST /api/nextTurn/:gameId', () => {
-  const repo = new RedisGameRepository();
+const repo = new RedisGameRepository();
+
+function makePostRequest(gameId: string, playerSecret: string) {
+  return new NextRequest(`http://localhost/api/nextTurn/${gameId}`, {
+    method: 'POST',
+    headers: { 'x-player-secret': playerSecret },
+  });
+}
+
+function makePlayers(count: number) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `p${i}`,
+    name: `Player${i}`,
+    role: (i === 0 ? 'HOST' : 'PLAYER') as 'HOST' | 'PLAYER',
+    secret: `secret${i}`,
+  }));
+}
+
+describe('POST /api/nextTurn/:gameId - happy path', () => {
   const gameId = 'test-game-turn';
-  const playerSecret = 'host-secret';
-  const playerId = 'host-id';
+  const hostSecret = 'secret0';
 
   beforeEach(async () => {
     const game: Game = {
@@ -35,38 +50,160 @@ describe('POST /api/nextTurn/:gameId', () => {
       ageOfYoungestPlayer: 10,
       language: 'en-US',
       status: 'STARTED',
-      players: [
-        { id: playerId, name: 'Alice', role: 'HOST', secret: playerSecret }, 
-        { id: 'p2', name: 'Bob', role: 'PLAYER', secret: 's2' },
-        { id: 'p3', name: 'Charlie', role: 'PLAYER', secret: 's3' }
-      ],
+      players: makePlayers(3),
       turns: [],
       createdAt: Date.now(),
     };
     await repo.save(game);
   });
 
-  it('should start next turn using game language', async () => {
-    const req = new NextRequest(`http://localhost/api/nextTurn/${gameId}`, {
-      method: 'POST',
-      headers: {
-          'x-player-secret': playerSecret
-      }
-    });
-
-    const response = await POST(req, { params: { gameId } });
+  it('should start next turn and persist the word', async () => {
+    const response = await POST(makePostRequest(gameId, hostSecret), { params: { gameId } });
     const json = await response.json();
 
     expect(response.status).toBe(200);
-    // The endpoint returns { success: true }, not the role directly
     expect(json).toHaveProperty('success', true);
-    
-    // Verify fetch was called (implicit check that language was passed logic-wise)
-    expect(global.fetch).toHaveBeenCalled();
 
-    // Verify that the turn was actually created in the DB
     const updatedGame = await repo.findById(gameId);
     expect(updatedGame?.turns).toHaveLength(1);
     expect(updatedGame?.turns[0].word).toBe('mock-word');
+  });
+});
+
+describe('POST /api/nextTurn/:gameId - authorization', () => {
+  const gameId = 'game-auth-turn';
+  const hostSecret = 'secret0';
+
+  beforeEach(async () => {
+    const game: Game = {
+      gameId,
+      ageOfYoungestPlayer: 10,
+      language: 'de-DE',
+      status: 'STARTED',
+      players: makePlayers(3),
+      turns: [],
+      createdAt: Date.now(),
+    };
+    await repo.save(game);
+  });
+
+  it('should return 401 when a non-host player tries to start a turn', async () => {
+    const playerSecret = 'secret1'; // PLAYER role, not HOST
+    const response = await POST(makePostRequest(gameId, playerSecret), { params: { gameId } });
+    expect(response.status).toBe(401);
+  });
+
+  it('should return 401 for an unknown player secret', async () => {
+    const response = await POST(makePostRequest(gameId, 'wrong-secret'), { params: { gameId } });
+    expect(response.status).toBe(401);
+  });
+
+  it('should return 404 for a non-existent game', async () => {
+    const response = await POST(makePostRequest('no-such-game', 'any-secret'), { params: { gameId: 'no-such-game' } });
+    expect(response.status).toBe(404);
+  });
+});
+
+describe('POST /api/nextTurn/:gameId - turn structure', () => {
+  const gameId = 'game-structure-turn';
+  const hostSecret = 'secret0';
+
+  beforeEach(async () => {
+    const game: Game = {
+      gameId,
+      ageOfYoungestPlayer: 10,
+      language: 'de-DE',
+      status: 'STARTED',
+      players: makePlayers(4),
+      turns: [],
+      createdAt: Date.now(),
+    };
+    await repo.save(game);
+  });
+
+  it('should assign every player to exactly one group', async () => {
+    await POST(makePostRequest(gameId, hostSecret), { params: { gameId } });
+
+    const game = await repo.findById(gameId);
+    const turn = game!.turns[0];
+    const allPlayerIds = game!.players.map(p => p.id);
+
+    // Every player appears in exactly one list
+    for (const id of allPlayerIds) {
+      const inImpostors = turn.impostors.includes(id);
+      const inCivilians = turn.civilians.includes(id);
+      expect(inImpostors || inCivilians).toBe(true);
+      expect(inImpostors && inCivilians).toBe(false);
+    }
+
+    // Total adds up
+    expect(turn.impostors.length + turn.civilians.length).toBe(allPlayerIds.length);
+  });
+
+  it('should accumulate turns instead of replacing them', async () => {
+    await POST(makePostRequest(gameId, hostSecret), { params: { gameId } });
+    await POST(makePostRequest(gameId, hostSecret), { params: { gameId } });
+
+    const game = await repo.findById(gameId);
+    expect(game?.turns).toHaveLength(2);
+  });
+
+  it('should pass previously used words to the word generator', async () => {
+    const gameWithTurns: Game = {
+      gameId,
+      ageOfYoungestPlayer: 10,
+      language: 'de-DE',
+      status: 'STARTED',
+      players: makePlayers(4),
+      turns: [
+        { word: 'Apfel', impostors: ['p0'], civilians: ['p1', 'p2', 'p3'] },
+        { word: 'Tiger', impostors: ['p1'], civilians: ['p0', 'p2', 'p3'] },
+      ],
+      createdAt: Date.now(),
+    };
+    await repo.save(gameWithTurns);
+
+    (global.fetch as jest.Mock).mockClear();
+    await POST(makePostRequest(gameId, hostSecret), { params: { gameId } });
+
+    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+    const body = JSON.parse(fetchCall[1].body);
+    const prompt: string = body.contents[0].parts[0].text;
+
+    expect(prompt).toContain('Apfel');
+    expect(prompt).toContain('Tiger');
+  });
+});
+
+describe('POST /api/nextTurn/:gameId - impostor count', () => {
+  const hostSecret = 'secret0';
+
+  async function startTurnForGame(gameId: string, playerCount: number) {
+    const game: Game = {
+      gameId,
+      ageOfYoungestPlayer: 10,
+      language: 'de-DE',
+      status: 'STARTED',
+      players: makePlayers(playerCount),
+      turns: [],
+      createdAt: Date.now(),
+    };
+    await repo.save(game);
+    await POST(makePostRequest(gameId, hostSecret), { params: { gameId } });
+    return repo.findById(gameId);
+  }
+
+  it('should assign 1 impostor for 2–5 players', async () => {
+    for (const count of [2, 3, 4, 5]) {
+      const game = await startTurnForGame(`game-imp-${count}p`, count);
+      expect(game!.turns[0].impostors).toHaveLength(1);
+    }
+  });
+
+  it('should assign 2 impostors for 6–8 players', async () => {
+    for (const count of [6, 7, 8]) {
+      const game = await startTurnForGame(`game-imp-${count}p`, count);
+      expect(game!.turns[0].impostors).toHaveLength(2);
+    }
   });
 });

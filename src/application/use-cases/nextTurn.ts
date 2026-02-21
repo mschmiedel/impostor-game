@@ -33,14 +33,9 @@ export class NextTurnUseCase {
 
     const players = game.players;
     const count = players.length;
-    let impostorCount = 1;
 
-    // Logic for impostor count
-    if (count >= 5) { // Adjusted logic slightly or keep as is? Keep as is for now.
-       // Original code had this check: if (count >= 2) impostorCount = Math.max(1, Math.floor(count / 3));
-       // Let's stick to safe defaults.
-       impostorCount = Math.max(1, Math.floor(count / 4)); // e.g. 4 players -> 1 imp, 8 -> 2
-    }
+    // floor(players / 3), minimum 1: 2-5 players → 1, 6-8 → 2, 9-11 → 3
+    const impostorCount = Math.max(1, Math.floor(count / 3));
     
     const shuffled = [...players].sort(() => 0.5 - Math.random());
     const impostors = shuffled.slice(0, impostorCount).map(p => p.id);

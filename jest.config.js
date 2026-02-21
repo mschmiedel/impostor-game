@@ -18,4 +18,16 @@ module.exports = {
   },
   // Don't ignore uuid so the transform above can process its ESM files
   transformIgnorePatterns: ['/node_modules/(?!(uuid)/)'],
+  collectCoverageFrom: [
+    'src/application/use-cases/**/*.ts',
+  ],
+  coverageReporters: ['text', 'cobertura'],
+  coverageThreshold: {
+    global: {
+      branches: 60,
+      functions: 80,
+      lines: 75,
+      statements: 75,
+    },
+  },
 };
