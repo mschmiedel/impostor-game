@@ -4,7 +4,10 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 120_000,
   expect: { timeout: 15_000 },
-  reporter: [['html', { open: 'never' }]],
+  reporter: [
+    ['html', { open: 'never' }],
+    ['json', { outputFile: 'test-results/results.json' }],
+  ],
   use: {
     baseURL: 'http://localhost:3000',
     screenshot: 'on',
