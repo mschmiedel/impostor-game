@@ -2,7 +2,7 @@ name: impostor-e2e
 
 services:
   app:
-    build: .
+    image: ${APP_IMAGE}
     ports:
       - "3000:3000"
     environment:
