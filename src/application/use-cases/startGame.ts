@@ -1,5 +1,4 @@
 import { GameRepository } from '@/domain/ports/GameRepository';
-import { Game } from '@/domain/entities/Game';
 
 export interface StartGameInput {
   gameId: string;
