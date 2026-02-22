@@ -166,7 +166,7 @@ export default function GameRoom() {
                {showHistory ? t("hideHistory") : t("showHistory")}
             </button>
             <div className="text-sm font-mono bg-gray-100 dark:bg-slate-800 dark:text-gray-300 p-2 rounded">
-              {t("status")}: <span data-testid="game-status" className={game.status === 'STARTED' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}>{game.status}</span>
+              {t("status")}: <span data-testid="game-status" data-status={game.status} className={game.status === 'STARTED' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}>{t(`status_${game.status}`)}</span>
             </div>
         </div>
       </div>

@@ -63,7 +63,7 @@ async function setupGameAndStartTurn(browser: Browser, playerCount: number, lang
   // Host waits for all players then starts game
   await expect(pages[0].locator('[data-testid^="player-badge-"]')).toHaveCount(playerCount, { timeout: 15_000 });
   await pages[0].locator('[data-testid="start-game-btn"]').click();
-  await expect(pages[0].locator('[data-testid="game-status"]')).toHaveText('STARTED', { timeout: 10_000 });
+  await expect(pages[0].locator('[data-testid="game-status"][data-status="STARTED"]')).toBeVisible({ timeout: 10_000 });
 
   // Start first turn
   await pages[0].locator('[data-testid="next-turn-btn"]').click();
@@ -238,7 +238,7 @@ test('3-player game: create → join → 2 turns → finish', async ({ browser }
     await page1.locator('[data-testid="start-game-btn"]').click();
 
     // Wait for game to transition to STARTED
-    await expect(page1.locator('[data-testid="game-status"]')).toHaveText('STARTED', { timeout: 10_000 });
+    await expect(page1.locator('[data-testid="game-status"][data-status="STARTED"]')).toBeVisible({ timeout: 10_000 });
 
     // Session 1 (host) immediately starts the first turn
     await page1.locator('[data-testid="next-turn-btn"]').click();
@@ -257,7 +257,7 @@ test('3-player game: create → join → 2 turns → finish', async ({ browser }
 
     // Step 10: All 3 sessions see the game as finished
     for (const page of [page1, page2, page3]) {
-      await expect(page.locator('[data-testid="game-status"]')).toHaveText('FINISHED', { timeout: 10_000 });
+      await expect(page.locator('[data-testid="game-status"][data-status="FINISHED"]')).toBeVisible({ timeout: 10_000 });
       await expect(page.locator('[data-testid="new-game-btn"]')).toBeVisible();
     }
   } finally {
@@ -351,7 +351,7 @@ for (const locale of supportedLocales) {
     try {
       // All players should see game status STARTED
       for (const page of pages) {
-        await expect(page.locator('[data-testid="game-status"]')).toHaveText('STARTED', { timeout: 10_000 });
+        await expect(page.locator('[data-testid="game-status"][data-status="STARTED"]')).toBeVisible({ timeout: 10_000 });
       }
 
       // Reveal card on host's page — UI should not crash and content should render
