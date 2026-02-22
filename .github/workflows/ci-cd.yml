@@ -30,7 +30,6 @@ jobs:
         run: npm run lint
 
   test:
-    needs: lint
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -75,7 +74,7 @@ jobs:
           path: code-coverage-results.md
 
   build:
-    needs: test
+    needs: [lint, test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -85,6 +84,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -108,6 +110,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
   e2e-test:
     needs: build
@@ -127,6 +131,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
 
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
