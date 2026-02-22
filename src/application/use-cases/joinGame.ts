@@ -46,7 +46,7 @@ export class JoinGameUseCase {
     // This likely refers to the join code duplication (which I handled in CreateGame).
     // But duplicate player names could be confusing. Let's not over-engineer unless asked.
     
-    game.players.push({ id: playerId, name: input.playerName, secret: playerSecret, role: 'PLAYER' });
+    game.players.push({ id: playerId, name: input.playerName, secret: playerSecret, role: 'PLAYER', isReady: true });
 
     await this.gameRepo.save(game);
 

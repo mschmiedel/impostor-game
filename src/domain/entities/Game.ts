@@ -5,6 +5,7 @@ export interface Player {
   name: string;
   secret: string; // Private ID for authentication
   role: 'HOST' | 'PLAYER';
+  isReady: boolean;
 }
 
 export interface Turn {

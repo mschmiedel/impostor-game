@@ -12,6 +12,7 @@ export interface PlayerDTO {
   name: string;
   role: 'HOST' | 'PLAYER';
   isMe: boolean;
+  isReady: boolean;
 }
 
 export interface TurnDTO {
@@ -53,7 +54,8 @@ export class GetGameDetailsUseCase {
       id: p.id,
       name: p.name,
       role: p.role,
-      isMe: p.id === requestingPlayer.id
+      isMe: p.id === requestingPlayer.id,
+      isReady: p.isReady,
     }));
 
     const turnsDTO: TurnDTO[] = (game.turns || []).map((turn, index) => {
