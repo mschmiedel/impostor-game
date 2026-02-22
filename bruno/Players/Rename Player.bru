@@ -1,0 +1,21 @@
+meta {
+  name: Rename Player
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{baseUrl}}/api/players/{{gameId}}/{{myPlayerId}}
+  body: json
+  auth: none
+}
+
+headers {
+  x-player-secret: {{myPlayerSecret}}
+}
+
+body:json {
+  {
+    "newName": "NewName"
+  }
+}

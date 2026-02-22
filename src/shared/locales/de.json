@@ -52,5 +52,9 @@
   "checkHistory": "Überprüfe den Verlauf für Details.",
   "tapToReveal": "Antippen zum Aufdecken",
   "tapToRevealDesc": "Zeigt Rolle für 2s",
-  "round": "Runde"
+  "round": "Runde",
+  "editName": "Name bearbeiten",
+  "saveName": "Speichern",
+  "cancelEdit": "Abbrechen",
+  "removePlayer": "Spieler entfernen"
 }
