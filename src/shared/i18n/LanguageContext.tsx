@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import de from '../locales/de.json';
 import en from '../locales/en.json';
 import es from '../locales/es.json';
@@ -34,10 +34,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     return storedLang && translations[storedLang] ? storedLang : 'de-DE';
   });
 
-  const handleSetLanguage = (lang: Locale) => {
+  const handleSetLanguage = useCallback((lang: Locale) => {
     setLanguage(lang);
     localStorage.setItem('impostor_language', lang);
-  };
+  }, []);
 
   const t = (key: keyof Translations) => {
     return translations[language][key] || key;
