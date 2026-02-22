@@ -138,7 +138,7 @@ export default function GameRoom() {
   };
 
   if (loading && !game) return <div className="p-10 text-center dark:text-gray-200">{t("loadingGame")}</div>;
-  if (error) return <div className="p-10 text-center text-red-600 dark:text-red-400">{error}</div>;
+  if (error) return <div data-testid="error-message" className="p-10 text-center text-red-600 dark:text-red-400">{error}</div>;
   if (!game) return <div className="p-10 text-center dark:text-gray-200">{t("noData")}</div>;
 
   const me = game.players.find(p => p.isMe);
@@ -196,6 +196,7 @@ export default function GameRoom() {
                 {editingPlayerId === p.id ? (
                   <>
                     <input
+                      data-testid="edit-name-input"
                       autoFocus
                       className="border border-indigo-400 rounded px-2 py-1 text-sm dark:bg-slate-700 dark:text-gray-200 focus:outline-none"
                       value={editName}
@@ -210,6 +211,7 @@ export default function GameRoom() {
                       }}
                     />
                     <button
+                      data-testid="save-name-btn"
                       aria-label={t("saveName")}
                       onClick={async () => { await renamePlayer(p.id, editName); setEditingPlayerId(null); }}
                       className="text-green-600 dark:text-green-400 hover:text-green-800 font-bold text-sm px-1"
@@ -227,6 +229,7 @@ export default function GameRoom() {
                     </span>
                     {p.isMe && (
                       <button
+                        data-testid="edit-name-btn"
                         aria-label={t("editName")}
                         onClick={() => { setEditingPlayerId(p.id); setEditName(p.name); }}
                         className="text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 text-sm px-1"
@@ -234,6 +237,7 @@ export default function GameRoom() {
                     )}
                     {isHost && !p.isMe && (
                       <button
+                        data-testid="remove-player-btn"
                         aria-label={t("removePlayer")}
                         onClick={() => removePlayer(p.id)}
                         className="text-red-400 hover:text-red-600 dark:hover:text-red-400 font-bold text-sm px-1"
