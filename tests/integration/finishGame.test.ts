@@ -22,7 +22,7 @@ describe('POST /api/finishGame/:gameId', () => {
       ageOfYoungestPlayer: 10,
       language: 'de-DE',
       status: 'STARTED',
-      players: [{ id: playerId, name: 'Host', role: 'HOST', secret: playerSecret }],
+      players: [{ id: playerId, name: 'Host', role: 'HOST', secret: playerSecret, isReady: true }],
       turns: [],
       createdAt: Date.now(),
     };

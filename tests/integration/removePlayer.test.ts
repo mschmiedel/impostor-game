@@ -27,8 +27,8 @@ function baseGame(overrides: Partial<Game> = {}): Game {
     language: 'de-DE',
     createdAt: Date.now(),
     players: [
-      { id: 'host-id', name: 'Host', role: 'HOST', secret: 'host-secret' },
-      { id: 'player-id', name: 'Alice', role: 'PLAYER', secret: 'alice-secret' },
+      { id: 'host-id', name: 'Host', role: 'HOST', secret: 'host-secret', isReady: true },
+      { id: 'player-id', name: 'Alice', role: 'PLAYER', secret: 'alice-secret', isReady: true },
     ],
     turns: [],
     ...overrides,

@@ -35,6 +35,13 @@ export class StartGameUseCase {
       throw new Error("Only the HOST can start the game");
     }
 
+    // Remove non-ready players before starting
+    const readyPlayers = game.players.filter(p => p.isReady);
+    if (readyPlayers.length < 3) {
+      throw new Error("Not enough ready players");
+    }
+    game.players = readyPlayers;
+
     // Change status
     game.status = 'STARTED';
     

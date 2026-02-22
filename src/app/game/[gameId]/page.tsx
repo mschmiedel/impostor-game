@@ -11,6 +11,7 @@ type PlayerDTO = {
   name: string;
   role: 'HOST' | 'PLAYER';
   isMe: boolean;
+  isReady: boolean;
 };
 
 type TurnDTO = {
@@ -27,6 +28,7 @@ type GameDTO = {
   joinCode?: string;
   status: "JOINING" | "STARTED" | "FINISHED";
   language: Locale;
+  ageOfYoungestPlayer: number;
   players: PlayerDTO[];
   turns: TurnDTO[];
 };
@@ -35,7 +37,7 @@ export default function GameRoom() {
   const { gameId } = useParams<{ gameId: string }>();
   const router = useRouter();
   const { t, setLanguage } = useLanguage();
-  
+
   const [game, setGame] = useState<GameDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,13 +46,23 @@ export default function GameRoom() {
   const [currentUrl, setCurrentUrl] = useState("");
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [restartLanguage, setRestartLanguage] = useState('de-DE');
+  const [restartAge, setRestartAge] = useState(10);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setCurrentUrl(window.location.href);
     }
   }, []);
-  
+
+  // Sync restart form defaults whenever game language/age changes
+  const gameLanguage = game?.language;
+  const gameAge = game?.ageOfYoungestPlayer;
+  useEffect(() => {
+    if (gameLanguage) setRestartLanguage(gameLanguage);
+    if (gameAge !== undefined) setRestartAge(gameAge);
+  }, [gameLanguage, gameAge]);
+
   // Wrapped in useCallback to be stable for useEffect dependency
   const getSecret = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -73,12 +85,12 @@ export default function GameRoom() {
               'x-player-secret': secret
            }
         });
-        
+
         if (res.status === 404) {
           setError(t("gameNotFound"));
           return;
         }
-        
+
         if (res.status === 401) {
            setError(t("errorJoining"));
            return;
@@ -88,7 +100,7 @@ export default function GameRoom() {
            setError(t("removedByHost"));
            return;
         }
-        
+
         if (res.ok) {
            const data = await res.json();
            setGame(data);
@@ -105,7 +117,7 @@ export default function GameRoom() {
     };
 
     fetchGame();
-    const interval = setInterval(fetchGame, 2000); 
+    const interval = setInterval(fetchGame, 2000);
 
     return () => clearInterval(interval);
   }, [gameId, router, t, getSecret, setLanguage]);
@@ -113,8 +125,8 @@ export default function GameRoom() {
   const apiCall = async (endpoint: string) => {
     const secret = getSecret();
     if (!secret) return;
-    
-    await fetch(`/api/${endpoint}/${gameId}`, { 
+
+    await fetch(`/api/${endpoint}/${gameId}`, {
         method: "POST",
         headers: {
             'x-player-secret': secret
@@ -125,6 +137,25 @@ export default function GameRoom() {
   const startGame = () => apiCall("startGame");
   const nextTurn = () => apiCall("nextTurn");
   const finishGame = () => apiCall("finishGame");
+
+  const restartGame = async () => {
+    const secret = getSecret();
+    if (!secret) return;
+    await fetch(`/api/game/${gameId}/reset`, {
+      method: 'POST',
+      headers: { 'x-player-secret': secret, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: restartLanguage, ageOfYoungestPlayer: restartAge }),
+    });
+  };
+
+  const readyUp = async () => {
+    const secret = getSecret();
+    if (!secret) return;
+    await fetch(`/api/game/${gameId}/ready`, {
+      method: 'POST',
+      headers: { 'x-player-secret': secret },
+    });
+  };
 
   const renamePlayer = async (playerId: string, newName: string) => {
     const secret = getSecret();
@@ -152,17 +183,35 @@ export default function GameRoom() {
   const me = game.players.find(p => p.isMe);
   const isHost = me?.role === 'HOST';
   const currentTurn = game.turns.find(t => t.isCurrent);
-  
+
   const pastTurns = game.turns.filter(t => !t.isCurrent);
+
+  // JOINING state — non-ready player (after a restart): show ready-up prompt
+  if (game.status === 'JOINING' && me && !me.isReady) {
+    return (
+      <div className="max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-xl shadow-md overflow-hidden p-6 min-h-[50vh] transition-colors duration-200">
+        <div className="text-center py-20">
+          <h2 className="text-2xl font-bold mb-4 dark:text-gray-200">{t("joinNextRound")}</h2>
+          <button
+            data-testid="join-next-round-btn"
+            onClick={readyUp}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform hover:scale-105"
+          >
+            {t("joinNextRound")}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-xl shadow-md overflow-hidden p-6 relative min-h-[50vh] transition-colors duration-200">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 border-b dark:border-slate-700 pb-4 gap-4">
         <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{t("room")}: {gameId.substring(0,8)}...</h1>
         <div className="flex gap-2 items-center flex-wrap justify-center">
-            <button 
+            <button
               data-testid="toggle-history-btn"
-              onClick={() => setShowHistory(!showHistory)} 
+              onClick={() => setShowHistory(!showHistory)}
               className="text-sm bg-gray-200 dark:bg-slate-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 px-3 py-1 rounded transition-colors"
             >
                {showHistory ? t("hideHistory") : t("showHistory")}
@@ -180,12 +229,12 @@ export default function GameRoom() {
                <ul className="space-y-2 text-sm max-h-60 overflow-y-auto custom-scrollbar">
                   {pastTurns.map((turn, idx) => (
                      <li key={idx} className="border-b dark:border-slate-700 pb-2 last:border-0 dark:text-gray-300">
-                        <span className="font-semibold text-indigo-700 dark:text-indigo-400">{t("turn")} {idx + 1}:</span> {t("word")}: <strong>{turn.word || "???"}</strong>. 
+                        <span className="font-semibold text-indigo-700 dark:text-indigo-400">{t("turn")} {idx + 1}:</span> {t("word")}: <strong>{turn.word || "???"}</strong>.
                         <br/>
                         {turn.impostors && (
                              <>
-                                <span className="text-red-600 dark:text-red-400">{t("impostor")}:</span> 
-                                {game.players.filter(p => turn.impostors?.includes(p.id)).map(p => p.name).join(", ")}. 
+                                <span className="text-red-600 dark:text-red-400">{t("impostor")}:</span>
+                                {game.players.filter(p => turn.impostors?.includes(p.id)).map(p => p.name).join(", ")}.
                              </>
                         )}
                      </li>
@@ -235,6 +284,10 @@ export default function GameRoom() {
                     <span className={p.isMe ? "font-bold text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"}>
                       {p.name} {p.isMe ? t("you") : ""} {p.role === 'HOST' ? "👑" : ""}
                     </span>
+                    {p.isReady
+                      ? <span data-testid={`ready-check-${p.id}`} className="text-green-500">✓</span>
+                      : <span data-testid={`not-ready-${p.id}`} className="text-gray-400">⏳</span>
+                    }
                     {p.isMe && (
                       <button
                         data-testid="edit-name-btn"
@@ -256,7 +309,7 @@ export default function GameRoom() {
               </div>
             ))}
           </div>
-          
+
           {game.joinCode && (
             <div className="mb-6">
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t("joinCode")}</p>
@@ -274,17 +327,17 @@ export default function GameRoom() {
                 {showQR ? t("hideQR") : t("showQR")}
              </button>
              {isHost && (
-                <button 
+                <button
                   data-testid="start-game-btn"
                   onClick={startGame}
-                  disabled={game.players.length < 3}
+                  disabled={game.players.filter(p => p.isReady).length < 3}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
                 >
-                  {t("startGame")} ({game.players.length}/3 min)
+                  {t("startGame")} ({game.players.filter(p => p.isReady).length}/3 min)
                 </button>
              )}
           </div>
-          
+
           {showQR && currentUrl && (
              <div data-testid="qr-code-container" className="mt-6 flex justify-center animate-fadeIn p-4 bg-white dark:bg-white rounded-lg border shadow-sm inline-block">
                 {/* QR Code always needs white background to be scannable */}
@@ -293,7 +346,7 @@ export default function GameRoom() {
              </div>
           )}
 
-           {isHost && game.players.length < 3 && <p className="text-sm text-gray-400 mt-2">{t("minPlayers")}</p>}
+           {isHost && game.players.filter(p => p.isReady).length < 3 && <p className="text-sm text-gray-400 mt-2">{t("minPlayers")}</p>}
         </div>
       )}
 
@@ -304,7 +357,7 @@ export default function GameRoom() {
                 {t("currentTurn")}
                 {game.turns.length > 0 && <span className="ml-2 text-indigo-600 dark:text-indigo-400 text-lg font-normal">({t("round")} {game.turns.length})</span>}
              </h2>
-             
+
              {currentTurn ? (
                 <CurrentTurnDisplay turn={currentTurn} t={t} playerCount={game.players.length} />
              ) : (
@@ -329,12 +382,58 @@ export default function GameRoom() {
                </button>
             </div>
           )}
-          
+
            {game.status === 'FINISHED' && (
               <div className="text-center py-6 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 rounded-lg border border-yellow-200 dark:border-yellow-700 mt-4 shadow-sm">
                 <p className="text-lg font-bold">{t("gameEnded")}</p>
                 <p className="mb-4">{t("hopeFun")}</p>
-                <button data-testid="new-game-btn" onClick={() => router.push('/')} className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors">{t("newGame")}</button>
+                {isHost ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex gap-3 items-center flex-wrap justify-center">
+                      <select
+                        data-testid="restart-language-select"
+                        value={restartLanguage}
+                        onChange={e => setRestartLanguage(e.target.value)}
+                        className="border rounded px-3 py-2 dark:bg-slate-800 dark:text-gray-200 dark:border-slate-600"
+                      >
+                        <option value="de-DE">Deutsch</option>
+                        <option value="en-US">English</option>
+                        <option value="es-ES">Español</option>
+                        <option value="fr-FR">Français</option>
+                        <option value="it-IT">Italiano</option>
+                      </select>
+                      <input
+                        data-testid="restart-age-input"
+                        type="number"
+                        min={5}
+                        max={100}
+                        value={restartAge}
+                        onChange={e => setRestartAge(Number(e.target.value))}
+                        className="border rounded px-3 py-2 w-20 dark:bg-slate-800 dark:text-gray-200 dark:border-slate-600"
+                      />
+                    </div>
+                    <div className="flex gap-3 flex-wrap justify-center">
+                      <button
+                        data-testid="restart-game-btn"
+                        onClick={restartGame}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors"
+                      >
+                        {t("restartGame")}
+                      </button>
+                      <button
+                        data-testid="new-game-btn"
+                        onClick={() => router.push('/')}
+                        className="bg-gray-200 dark:bg-slate-700 dark:text-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors"
+                      >
+                        {t("newGame")}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p data-testid="waiting-for-restart" className="text-yellow-700 dark:text-yellow-300">
+                    {t("waitingForHostRestart")}
+                  </p>
+                )}
               </div>
            )}
         </div>

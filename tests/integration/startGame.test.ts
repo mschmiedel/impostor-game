@@ -19,8 +19,13 @@ describe('POST /api/startGame/:gameId', () => {
     const game: Game = {
       gameId,
       ageOfYoungestPlayer: 10,
+      language: 'de-DE',
       status: 'JOINING',
-      players: [{ id: playerId, name: 'Host', role: 'HOST', secret: playerSecret }],
+      players: [
+        { id: playerId, name: 'Host', role: 'HOST', secret: playerSecret, isReady: true },
+        { id: 'p2', name: 'Player2', role: 'PLAYER', secret: 'p2-secret', isReady: true },
+        { id: 'p3', name: 'Player3', role: 'PLAYER', secret: 'p3-secret', isReady: true },
+      ],
       turns: [],
       createdAt: Date.now(),
     };
@@ -54,5 +59,35 @@ describe('POST /api/startGame/:gameId', () => {
     });
     const response = await POST(req, { params: Promise.resolve({ gameId }) });
     expect([401, 403]).toContain(response.status);
+  });
+});
+
+describe('POST /api/startGame/:gameId - non-ready player filter', () => {
+  const repo = new RedisGameRepository();
+  const gameId = 'test-game-start-nonready';
+  const playerSecret = 'host-secret-nr';
+
+  it('should return 400 when fewer than 3 players are ready', async () => {
+    const game: Game = {
+      gameId,
+      ageOfYoungestPlayer: 10,
+      language: 'de-DE',
+      status: 'JOINING',
+      players: [
+        { id: 'h', name: 'Host', role: 'HOST', secret: playerSecret, isReady: true },
+        { id: 'p2', name: 'Player2', role: 'PLAYER', secret: 'p2-secret-nr', isReady: true },
+        { id: 'p3', name: 'Player3', role: 'PLAYER', secret: 'p3-secret-nr', isReady: false },
+      ],
+      turns: [],
+      createdAt: Date.now(),
+    };
+    await repo.save(game);
+
+    const req = new NextRequest(`http://localhost/api/startGame/${gameId}`, {
+      method: 'POST',
+      headers: { 'x-player-secret': playerSecret },
+    });
+    const response = await POST(req, { params: Promise.resolve({ gameId }) });
+    expect(response.status).toBe(400);
   });
 });
