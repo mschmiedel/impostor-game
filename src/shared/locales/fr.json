@@ -52,5 +52,9 @@
   "checkHistory": "Vérifiez l'historique pour les détails.",
   "tapToReveal": "Appuyez pour révéler",
   "tapToRevealDesc": "Affiche pendant 2s",
-  "round": "Ronde"
+  "round": "Ronde",
+  "editName": "Modifier le nom",
+  "saveName": "Enregistrer",
+  "cancelEdit": "Annuler",
+  "removePlayer": "Retirer le joueur"
 }

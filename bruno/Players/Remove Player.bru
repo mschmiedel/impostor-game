@@ -1,0 +1,15 @@
+meta {
+  name: Remove Player
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{baseUrl}}/api/players/{{gameId}}/{{targetPlayerId}}
+  body: none
+  auth: none
+}
+
+headers {
+  x-player-secret: {{myPlayerSecret}}
+}

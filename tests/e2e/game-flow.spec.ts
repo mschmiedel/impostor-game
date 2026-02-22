@@ -38,6 +38,94 @@ async function assertTurnRoles(page1: Page, page2: Page, page3: Page) {
   });
 }
 
+test('rename own name in lobby: player sees update on all screens', async ({ browser }) => {
+  const ctx1 = await browser.newContext();
+  const ctx2 = await browser.newContext();
+
+  const page1 = await ctx1.newPage();
+  const page2 = await ctx2.newPage();
+
+  try {
+    // Host creates game
+    await page1.goto('/');
+    await page1.locator('[data-testid="creator-name-input"]').fill('Player 1');
+    await page1.locator('[data-testid="create-game-btn"]').click();
+    await page1.waitForURL(/\/game\//);
+
+    await page1.locator('[data-testid="join-code-display"]').waitFor({ state: 'visible' });
+    const joinCode = (await page1.locator('[data-testid="join-code-display"]').textContent()) ?? '';
+
+    // Player 2 joins
+    await page2.goto('/');
+    await page2.locator('[data-testid="join-game-id-input"]').fill(joinCode.trim());
+    await page2.locator('[data-testid="join-game-btn"]').click();
+    await page2.waitForURL(/\/join\//);
+    await page2.locator('[data-testid="join-player-name-input"]').fill('Player 2');
+    await page2.locator('[data-testid="join-confirm-btn"]').click();
+    await page2.waitForURL(/\/game\//);
+
+    // Host sees both badges
+    await expect(page1.locator('[data-testid^="player-badge-"]')).toHaveCount(2, { timeout: 10_000 });
+
+    // Player 2 edits their own name
+    await page2.locator('[data-testid="edit-name-btn"]').click();
+    await page2.locator('[data-testid="edit-name-input"]').fill('Player Two');
+    await page2.locator('[data-testid="save-name-btn"]').click();
+
+    // Player 2's own badge shows the new name (edit UI closes)
+    await expect(page2.locator('[data-testid="edit-name-btn"]')).toBeVisible({ timeout: 5_000 });
+
+    // Host's polling picks up the new name within 2s
+    await expect(page1.getByText('Player Two')).toBeVisible({ timeout: 5_000 });
+  } finally {
+    await ctx1.close();
+    await ctx2.close();
+  }
+});
+
+test('host removes player from lobby', async ({ browser }) => {
+  const ctx1 = await browser.newContext();
+  const ctx2 = await browser.newContext();
+
+  const page1 = await ctx1.newPage();
+  const page2 = await ctx2.newPage();
+
+  try {
+    // Host creates game
+    await page1.goto('/');
+    await page1.locator('[data-testid="creator-name-input"]').fill('Player 1');
+    await page1.locator('[data-testid="create-game-btn"]').click();
+    await page1.waitForURL(/\/game\//);
+
+    await page1.locator('[data-testid="join-code-display"]').waitFor({ state: 'visible' });
+    const joinCode = (await page1.locator('[data-testid="join-code-display"]').textContent()) ?? '';
+
+    // Player 2 joins
+    await page2.goto('/');
+    await page2.locator('[data-testid="join-game-id-input"]').fill(joinCode.trim());
+    await page2.locator('[data-testid="join-game-btn"]').click();
+    await page2.waitForURL(/\/join\//);
+    await page2.locator('[data-testid="join-player-name-input"]').fill('Player 2');
+    await page2.locator('[data-testid="join-confirm-btn"]').click();
+    await page2.waitForURL(/\/game\//);
+
+    // Host sees both player badges
+    await expect(page1.locator('[data-testid^="player-badge-"]')).toHaveCount(2, { timeout: 10_000 });
+
+    // Host removes Player 2
+    await page1.locator('[data-testid="remove-player-btn"]').click();
+
+    // Host now sees only their own badge
+    await expect(page1.locator('[data-testid^="player-badge-"]')).toHaveCount(1, { timeout: 5_000 });
+
+    // Player 2's next poll returns 403 → error message is shown
+    await expect(page2.getByTestId('error-message')).toBeVisible({ timeout: 5_000 });
+  } finally {
+    await ctx1.close();
+    await ctx2.close();
+  }
+});
+
 test('3-player game: create → join → 2 turns → finish', async ({ browser }) => {
   // Step 1: Open 3 isolated browser contexts (separate localStorage / session state)
   const ctx1 = await browser.newContext();

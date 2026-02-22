@@ -52,5 +52,9 @@
   "checkHistory": "Check the history to see details.",
   "tapToReveal": "Tap to Reveal",
   "tapToRevealDesc": "Hold to show for 2s",
-  "round": "Round"
+  "round": "Round",
+  "editName": "Edit name",
+  "saveName": "Save",
+  "cancelEdit": "Cancel",
+  "removePlayer": "Remove player"
 }

@@ -40,6 +40,8 @@ export default function GameRoom() {
   const [showHistory, setShowHistory] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -116,8 +118,27 @@ export default function GameRoom() {
   const nextTurn = () => apiCall("nextTurn");
   const finishGame = () => apiCall("finishGame");
 
+  const renamePlayer = async (playerId: string, newName: string) => {
+    const secret = getSecret();
+    if (!secret) return;
+    await fetch(`/api/players/${gameId}/${playerId}`, {
+      method: 'PATCH',
+      headers: { 'x-player-secret': secret, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newName }),
+    });
+  };
+
+  const removePlayer = async (playerId: string) => {
+    const secret = getSecret();
+    if (!secret) return;
+    await fetch(`/api/players/${gameId}/${playerId}`, {
+      method: 'DELETE',
+      headers: { 'x-player-secret': secret },
+    });
+  };
+
   if (loading && !game) return <div className="p-10 text-center dark:text-gray-200">{t("loadingGame")}</div>;
-  if (error) return <div className="p-10 text-center text-red-600 dark:text-red-400">{error}</div>;
+  if (error) return <div data-testid="error-message" className="p-10 text-center text-red-600 dark:text-red-400">{error}</div>;
   if (!game) return <div className="p-10 text-center dark:text-gray-200">{t("noData")}</div>;
 
   const me = game.players.find(p => p.isMe);
@@ -171,8 +192,59 @@ export default function GameRoom() {
           <h2 className="text-xl mb-4 dark:text-gray-200">{t("waitingForPlayers")}</h2>
           <div className="flex flex-wrap gap-4 justify-center mb-8">
             {game.players.map(p => (
-              <div key={p.id} data-testid={`player-badge-${p.id}`} className="bg-gray-50 dark:bg-slate-800 px-6 py-3 rounded shadow-sm flex items-center justify-center border border-gray-200 dark:border-slate-700">
-                <span className={p.isMe ? "font-bold text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"}>{p.name} {p.isMe ? t("you") : ""} {p.role === 'HOST' ? "👑" : ""}</span>
+              <div key={p.id} data-testid={`player-badge-${p.id}`} className="bg-gray-50 dark:bg-slate-800 px-4 py-3 rounded shadow-sm flex items-center gap-2 border border-gray-200 dark:border-slate-700">
+                {editingPlayerId === p.id ? (
+                  <>
+                    <input
+                      data-testid="edit-name-input"
+                      autoFocus
+                      className="border border-indigo-400 rounded px-2 py-1 text-sm dark:bg-slate-700 dark:text-gray-200 focus:outline-none"
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      onKeyDown={async e => {
+                        if (e.key === 'Enter') {
+                          await renamePlayer(p.id, editName);
+                          setEditingPlayerId(null);
+                        } else if (e.key === 'Escape') {
+                          setEditingPlayerId(null);
+                        }
+                      }}
+                    />
+                    <button
+                      data-testid="save-name-btn"
+                      aria-label={t("saveName")}
+                      onClick={async () => { await renamePlayer(p.id, editName); setEditingPlayerId(null); }}
+                      className="text-green-600 dark:text-green-400 hover:text-green-800 font-bold text-sm px-1"
+                    >✓</button>
+                    <button
+                      aria-label={t("cancelEdit")}
+                      onClick={() => setEditingPlayerId(null)}
+                      className="text-gray-500 dark:text-gray-400 hover:text-gray-700 font-bold text-sm px-1"
+                    >✗</button>
+                  </>
+                ) : (
+                  <>
+                    <span className={p.isMe ? "font-bold text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"}>
+                      {p.name} {p.isMe ? t("you") : ""} {p.role === 'HOST' ? "👑" : ""}
+                    </span>
+                    {p.isMe && (
+                      <button
+                        data-testid="edit-name-btn"
+                        aria-label={t("editName")}
+                        onClick={() => { setEditingPlayerId(p.id); setEditName(p.name); }}
+                        className="text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 text-sm px-1"
+                      >✎</button>
+                    )}
+                    {isHost && !p.isMe && (
+                      <button
+                        data-testid="remove-player-btn"
+                        aria-label={t("removePlayer")}
+                        onClick={() => removePlayer(p.id)}
+                        className="text-red-400 hover:text-red-600 dark:hover:text-red-400 font-bold text-sm px-1"
+                      >✕</button>
+                    )}
+                  </>
+                )}
               </div>
             ))}
           </div>
