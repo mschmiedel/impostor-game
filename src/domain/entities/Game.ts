@@ -9,6 +9,7 @@ export interface Player {
 
 export interface Turn {
     word: string;
+    category: string;
     impostors: string[];
     civilians: string[];
 }

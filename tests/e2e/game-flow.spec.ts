@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Browser } from '@playwright/test';
 
 // Reveals the card and returns the role and word.
 // Waits until the card is in "tap to reveal" state first (role-display not in DOM),
@@ -10,6 +10,70 @@ async function revealCard(page: Page): Promise<{ role: string; word: string }> {
   const role = (await page.locator('[data-testid="role-display"]').textContent()) ?? '';
   const word = (await page.locator('[data-testid="secret-word-display"]').textContent()) ?? '';
   return { role: role.trim(), word: word.trim() };
+}
+
+// Reveals the card and captures role, word, and whether category-display is visible.
+// All reads happen within the 2-second auto-hide window.
+async function revealCardFull(page: Page): Promise<{ role: string; word: string; categoryVisible: boolean }> {
+  await expect(page.locator('[data-testid="role-display"]')).not.toBeVisible();
+  await page.locator('[data-testid="reveal-card"]').click();
+  await page.locator('[data-testid="role-display"]').waitFor({ state: 'visible', timeout: 3_000 });
+  const role = (await page.locator('[data-testid="role-display"]').textContent()) ?? '';
+  const word = (await page.locator('[data-testid="secret-word-display"]').textContent()) ?? '';
+  const categoryVisible = await page.locator('[data-testid="category-display"]').isVisible();
+  return { role: role.trim(), word: word.trim(), categoryVisible };
+}
+
+// Sets up a game with the given number of players (ctx1 = host) and starts a turn.
+// Returns pages in order [host, p2, p3, ...].
+async function setupGameAndStartTurn(browser: Browser, playerCount: number, language = 'de-DE'): Promise<Page[]> {
+  const contexts = await Promise.all(Array.from({ length: playerCount }, () => browser.newContext()));
+  const pages = await Promise.all(contexts.map(ctx => ctx.newPage()));
+
+  // Host creates game
+  await pages[0].goto('/');
+  if (language !== 'de-DE') {
+    await pages[0].locator('[data-testid="language-select"]').selectOption(language);
+  }
+  await pages[0].locator('[data-testid="creator-name-input"]').fill('Host');
+  await pages[0].locator('[data-testid="create-game-btn"]').click();
+  await pages[0].waitForURL(/\/game\//);
+
+  const gameUrl = pages[0].url();
+  await pages[0].locator('[data-testid="join-code-display"]').waitFor({ state: 'visible' });
+  const joinCode = (await pages[0].locator('[data-testid="join-code-display"]').textContent()) ?? '';
+
+  // Remaining players join
+  for (let i = 1; i < playerCount; i++) {
+    if (i === 1) {
+      // Use join code
+      await pages[i].goto('/');
+      await pages[i].locator('[data-testid="join-game-id-input"]').fill(joinCode.trim());
+      await pages[i].locator('[data-testid="join-game-btn"]').click();
+    } else {
+      // Navigate directly to game URL (redirects to /join/)
+      await pages[i].goto(gameUrl);
+    }
+    await pages[i].waitForURL(/\/join\//);
+    await pages[i].locator('[data-testid="join-player-name-input"]').fill(`Player ${i + 1}`);
+    await pages[i].locator('[data-testid="join-confirm-btn"]').click();
+    await pages[i].waitForURL(/\/game\//);
+  }
+
+  // Host waits for all players then starts game
+  await expect(pages[0].locator('[data-testid^="player-badge-"]')).toHaveCount(playerCount, { timeout: 15_000 });
+  await pages[0].locator('[data-testid="start-game-btn"]').click();
+  await expect(pages[0].locator('[data-testid="game-status"]')).toHaveText('STARTED', { timeout: 10_000 });
+
+  // Start first turn
+  await pages[0].locator('[data-testid="next-turn-btn"]').click();
+
+  // Wait for reveal card in all sessions
+  for (const page of pages) {
+    await page.locator('[data-testid="reveal-card"]').waitFor({ state: 'visible', timeout: 10_000 });
+  }
+
+  return pages;
 }
 
 // Waits for the reveal card to appear in all 3 sessions, reveals each card
@@ -201,3 +265,100 @@ test('3-player game: create → join → 2 turns → finish', async ({ browser }
     await ctx3.close();
   }
 });
+
+// ── Test A: 3-player handicap ────────────────────────────────────────────────
+// With exactly 3 players the impostor receives the category as a handicap clue.
+test('3-player handicap: impostor sees category-display, word stays hidden', async ({ browser }) => {
+  const pages = await setupGameAndStartTurn(browser, 3);
+  const contexts = pages.map(p => p.context());
+
+  try {
+    // Reveal all cards and gather per-player info within the 2-second window
+    const results: Array<{ role: string; word: string; categoryVisible: boolean; page: Page }> = [];
+    for (const page of pages) {
+      const info = await revealCardFull(page);
+      results.push({ ...info, page });
+    }
+
+    const impostors = results.filter(r => r.role === 'IMPOSTOR');
+    const civilians = results.filter(r => r.role === 'CIVILIAN');
+
+    expect(impostors).toHaveLength(1);
+    expect(civilians).toHaveLength(2);
+
+    // Impostor with ≤3 players: category VISIBLE, word hidden
+    expect(impostors[0].categoryVisible).toBe(true);
+    expect(impostors[0].word).toBe('???');
+
+    // Civilians always see category and actual word
+    for (const c of civilians) {
+      expect(c.categoryVisible).toBe(true);
+      expect(c.word).not.toBe('???');
+      expect(c.word.length).toBeGreaterThan(0);
+    }
+  } finally {
+    for (const ctx of contexts) await ctx.close();
+  }
+});
+
+// ── Test B: 4-player standard rules ─────────────────────────────────────────
+// With 4+ players the impostor does NOT receive the category.
+test('4-player standard: impostor does NOT see category-display', async ({ browser }) => {
+  const pages = await setupGameAndStartTurn(browser, 4);
+  const contexts = pages.map(p => p.context());
+
+  try {
+    const results: Array<{ role: string; word: string; categoryVisible: boolean; page: Page }> = [];
+    for (const page of pages) {
+      const info = await revealCardFull(page);
+      results.push({ ...info, page });
+    }
+
+    const impostors = results.filter(r => r.role === 'IMPOSTOR');
+    const civilians = results.filter(r => r.role === 'CIVILIAN');
+
+    expect(impostors).toHaveLength(1);
+    expect(civilians).toHaveLength(3);
+
+    // Impostor with >3 players: category NOT visible, word hidden
+    expect(impostors[0].categoryVisible).toBe(false);
+    expect(impostors[0].word).toBe('???');
+
+    // Civilians still see category and word
+    for (const c of civilians) {
+      expect(c.categoryVisible).toBe(true);
+      expect(c.word).not.toBe('???');
+    }
+  } finally {
+    for (const ctx of contexts) await ctx.close();
+  }
+});
+
+// ── Test C: Multilingual parameterized ───────────────────────────────────────
+// Runs a minimal game-flow (create → join × 2 → start → turn) for each locale.
+// Asserts the UI loads without crashing and successfully transitions to STARTED.
+const supportedLocales: Array<{ code: string; label: string }> = [
+  { code: 'de-DE', label: 'Deutsch' },
+  { code: 'en-US', label: 'English' },
+];
+
+for (const locale of supportedLocales) {
+  test(`multilingual game flow: ${locale.label} (${locale.code})`, async ({ browser }) => {
+    const pages = await setupGameAndStartTurn(browser, 3, locale.code);
+    const contexts = pages.map(p => p.context());
+
+    try {
+      // All players should see game status STARTED
+      for (const page of pages) {
+        await expect(page.locator('[data-testid="game-status"]')).toHaveText('STARTED', { timeout: 10_000 });
+      }
+
+      // Reveal card on host's page — UI should not crash and content should render
+      const hostResult = await revealCardFull(pages[0]);
+      expect(['IMPOSTOR', 'CIVILIAN']).toContain(hostResult.role);
+      expect(hostResult.word.length).toBeGreaterThanOrEqual(0); // any string incl. '???'
+    } finally {
+      for (const ctx of contexts) await ctx.close();
+    }
+  });
+}

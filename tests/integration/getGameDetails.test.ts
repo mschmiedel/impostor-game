@@ -143,7 +143,7 @@ describe('GET /api/getGameDetails - word visibility in active turn', () => {
         { id: 'p3', name: 'Other', role: 'HOST', secret: 'secret-other' },
       ],
       turns: [
-        { word: 'Elefant', impostors: [impostorId], civilians: [civilianId, 'p3'] },
+        { word: 'Elefant', category: 'Tiere', impostors: [impostorId], civilians: [civilianId, 'p3'] },
       ],
     };
     await repo.save(game);
@@ -198,7 +198,7 @@ describe('GET /api/getGameDetails - finished game reveals everything', () => {
         { id: 'p3', name: 'Other', role: 'PLAYER', secret: 'secret-other-fin' },
       ],
       turns: [
-        { word: 'Giraffe', impostors: [impostorId], civilians: [civilianId, 'p3'] },
+        { word: 'Giraffe', category: 'Tiere', impostors: [impostorId], civilians: [civilianId, 'p3'] },
       ],
     };
     await repo.save(game);
@@ -242,8 +242,8 @@ describe('GET /api/getGameDetails - multi-turn game', () => {
         { id: 'p3', name: 'Other', role: 'PLAYER', secret: 'secret-other-multi' },
       ],
       turns: [
-        { word: 'Apfel', impostors: [impostorId], civilians: [civilianId, 'p3'] },
-        { word: 'Tiger', impostors: [impostorId], civilians: [civilianId, 'p3'] },
+        { word: 'Apfel', category: 'Obst', impostors: [impostorId], civilians: [civilianId, 'p3'] },
+        { word: 'Tiger', category: 'Tiere', impostors: [impostorId], civilians: [civilianId, 'p3'] },
       ],
     };
     await repo.save(game);

@@ -15,6 +15,7 @@ type PlayerDTO = {
 
 type TurnDTO = {
   word: string | null;
+  category: string | null;
   role: 'IMPOSTOR' | 'CIVILIAN' | 'UNKNOWN';
   impostors?: string[];
   civilians?: string[];
@@ -298,7 +299,7 @@ export default function GameRoom() {
              </h2>
              
              {currentTurn ? (
-                <CurrentTurnDisplay turn={currentTurn} t={t} />
+                <CurrentTurnDisplay turn={currentTurn} t={t} playerCount={game.players.length} />
              ) : (
                  game.status === 'FINISHED' ? (
                     <div className="text-center p-4 bg-gray-100 dark:bg-slate-800 rounded">
@@ -335,16 +336,18 @@ export default function GameRoom() {
   );
 }
 
-function CurrentTurnDisplay({ turn, t }: { turn: TurnDTO, t: any }) {
+function CurrentTurnDisplay({ turn, t, playerCount }: { turn: TurnDTO, t: any, playerCount: number }) {
   const [isRevealed, setIsRevealed] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isImpostor = turn.role === 'IMPOSTOR';
+  // Impostors see the category as a handicap only in small games (≤3 players)
+  const showCategoryToImpostor = isImpostor && playerCount <= 3;
 
   const handleReveal = () => {
     if (isRevealed) return; // Already revealed
 
     setIsRevealed(true);
-    
+
     // Clear any existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -366,7 +369,7 @@ function CurrentTurnDisplay({ turn, t }: { turn: TurnDTO, t: any }) {
   }, []);
 
   return (
-    <div 
+    <div
       data-testid="reveal-card"
       onClick={handleReveal}
       className="relative bg-slate-800 text-white p-8 rounded-xl text-center shadow-2xl max-w-lg mx-auto transform transition-all cursor-pointer overflow-hidden min-h-[300px] flex flex-col justify-center select-none dark:border dark:border-slate-700"
@@ -383,8 +386,16 @@ function CurrentTurnDisplay({ turn, t }: { turn: TurnDTO, t: any }) {
             <div data-testid="role-display" className="text-5xl font-black mb-8 tracking-wider">
               {isImpostor ? <span className="text-red-500 drop-shadow-md">IMPOSTOR</span> : <span className="text-blue-400 drop-shadow-md">CIVILIAN</span>}
             </div>
-            
+
             <div className="border-t border-slate-700 pt-8">
+              {(!isImpostor || showCategoryToImpostor) && turn.category && (
+                <div className="mb-4">
+                  <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-2 font-semibold">{t("category") ?? "Category"}</h3>
+                  <div data-testid="category-display" className="text-xl font-semibold text-slate-200">
+                    {turn.category}
+                  </div>
+                </div>
+              )}
               <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-4 font-semibold">{t("yourSecretWord")}</h3>
               <div data-testid="secret-word-display" className="text-4xl font-mono bg-slate-900 inline-block px-8 py-4 rounded-lg border border-slate-700 shadow-inner">
                  {isImpostor ? <span className="tracking-widest">???</span> : turn.word}

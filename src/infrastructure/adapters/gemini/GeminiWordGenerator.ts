@@ -1,111 +1,115 @@
 
-import { WordGenerator } from '@/domain/ports/WordGenerator';
+import { WordGenerator, WordGeneratorResult } from '@/domain/ports/WordGenerator';
+import redis from '@/infrastructure/adapters/redis/client';
+
+interface WordPool {
+  categories: Array<{
+    name: string;
+    words: string[];
+  }>;
+}
 
 export class GeminiWordGenerator implements WordGenerator {
   private apiKey: string;
-  private model: string = 'gemini-flash-lite-latest'; 
-  private categories = [
-        "Küchengeräte (Elektrisch)", "Werkzeug für Holzarbeiten", "Gartengeräte",
-        "Büroartikel & Schreibwaren", "Camping-Ausrüstung", "Musikinstrumente",
-        "Badezimmer-Utensilien", "Sport-Equipment", "Backstube & Gebäck",
-        "Elektronik-Gadgets", "Spielzeug aus dem Kinderzimmer", "Winterbekleidung",
-        "Sommer-Accessoires", "Kopfbedeckungen", "Schuhschrank-Inhalt",
-        "Berufsbekleidung & Uniformen", "Grillparty-Zubehör", "Strandurlaub-Ausrüstung",
-        "Wandern & Bergsport", "Fahrrad-Komponenten", "Haustier-Bedarf",
-        "Bauernhof-Inventar", "Waldtiere Mitteleuropas", "Exotische Vögel",
-        "Meeresbewohner", "Astronomie & Weltraum", "Transportmittel (Land)",
-        "Zirkus & Jahrmarkt", "Kino & Film-Equipment", "Flughafen & Fliegen",
-        "Schifffahrt & Nautik", "Post & Versand-Artikel", "Hotelzimmer-Inventar",
-        "Frühstückstisch", "Italienische Küche", "Asiatische Spezialitäten",
-        "Gewürze & Kräuter", "Exotisches Obst", "Gemüsegarten", "Kaffeebar & Heißgetränke",
-        "Museum & Kunstgegenstände", "Reinigungsmittel & Putzzeug", "Erste Hilfe & Medizin",
-        "Mittelalter & Rittertum", "Wilder Westen", "Detektiv-Ausrüstung",
-        "Fotografie-Zubehör", "Malerbedarf & Basteln", "Zimmerpflanzen",
-        "Haushaltsgroßgeräte", "Lampen & Leuchtmittel", "Taschen & Rucksäcke",
-        "Uhren & Zeitmessung", "Schmuck & Accessoires", "Haarpflege & Friseur",
-        "Fitnessstudio-Geräte", "Wintersport-Ausrüstung", "Wassersport",
-        "Brett- & Kartenspiele", "Nähzimmer-Bedarf", "Baustellen-Fahrzeuge",
-        "Tankstellen-Zubehör", "Arztpraxis-Einrichtung", "Camping-Küche",
-        "Bäckerei-Produkte", "Verpackungsmaterial", "Heimwerker-Bedarf",
-        "Angelsport", "Optik & Sehhilfen", "Souvenirs", "Schulmaterial",
-        "Festivals & Konzerte", "Picknick im Grünen", "Waschküche",
-        "Gartenmöbel", "Automobil-Innenraum", "Feuerwehr-Ausrüstung",
-        "Polizei-Einsatzmittel", "Wellness & Spa", "Jahrmarkt-Süßigkeiten"
-    ];
+  private model: string = 'gemini-flash-lite-latest';
 
-    constructor() {
+  constructor() {
     this.apiKey = process.env.GOOGLE_API_KEY || '';
     if (!this.apiKey) {
       console.warn("GOOGLE_API_KEY not set");
     }
   }
 
-  async generateWord(age: number, language: string, previousWords: string[]): Promise<string> {
-    if (!this.apiKey) return "fallback-word";
-      const randomCategory = this.categories[Math.floor(Math.random() * this.categories.length)];
-      // Use the provided language or default to de-DE
-      console.log("Random category: ", randomCategory);
-      const targetLanguage = language || 'de-DE';
-      const prompt = `
-        Aufgabe: Wähle ein einzelnes, geheimes Wort für das "Impostor"-Spiel (Variante: Mr. White).
-        
-        Parameter:
-        - Zielgruppe: Alter ${age}
-        - Sprache: ${targetLanguage}
-        - Kategorie: ${randomCategory}
-        - Ignoriere diese Wörter (bereits verwendet): ${previousWords.join(', ')}
-        
-        Regeln für die Auswahl (WICHTIG!):
-        1. Wähle zuerst eine zufällige, spezifische Kategorie.
-        2. Das Wort muss in der Sprache ${targetLanguage} geliefert werden.
-        3. Konkretisierung: Wähle ausschließlich KONKRETE SUBSTANTIVE. Keine Verben (wie "laufen", "quaken") und keine abstrakten Begriffe (wie "Liebe", "Mut").
-        4. Regeln:
-            - Die Wörter sollten thematisch und von der Schwierigkeit zum Alter ${age} passen. 
-            - Hab für die Kategorie mindestens 100 Wörter bereit zur random Auswahl.
-            - Wörter sollte idR jeder in dem Alter kennen, aber reduziere die Wahrscheinlichkeit, zu typische Wörter vom Alltag zu nehmen (Haus, Katze, usw), bei so einfachen Wörtern dann eher zusammengesetzte Wörter nehmen (Schäferhund z.B.)
-        5. Das Wort darf nicht in der Liste der bereits verwendeten Wörter stehen und sollte auch thematisch nicht zu nah an diesen liegen.
-        6. Das Wort muss für eine Person im Alter von ${age} Jahren leicht verständlich und bildlich vorstellbar sein.
-        
-        Antworte ausschließlich im JSON-Format:
-        {
-          "category": "Name der Kategorie",
-          "word": "Das geheime Wort"
-        }
-        `.trim();
+  private getCacheKey(language: string): string {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const lang = language.split('-')[0]; // Normalize "de-DE" → "de"
+    return `words:${today}:${lang}`;
+  }
+
+  private async getWordPool(language: string): Promise<WordPool> {
+    const cacheKey = this.getCacheKey(language);
+
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as WordPool;
+    }
+
+    const pool = await this.generateWordPool(language);
+    await redis.set(cacheKey, JSON.stringify(pool), 'EX', 86400);
+    return pool;
+  }
+
+  private async generateWordPool(language: string): Promise<WordPool> {
+    const lang = language.split('-')[0];
+    const prompt = `
+      Generate a JSON word pool for the "Impostor" party game.
+
+      Requirements:
+      - Language: ${lang}
+      - Create exactly 10 categories
+      - Each category must have exactly 50 concrete nouns
+      - Words must be appropriate for players of all ages
+      - Only concrete, easily imaginable nouns (no verbs, no abstract concepts)
+      - Words should vary in difficulty from simple to moderately complex
+
+      Respond ONLY with valid JSON in this exact format:
+      {
+        "categories": [
+          { "name": "CategoryName", "words": ["word1", "word2", ...50 words] },
+          ...10 categories total
+        ]
+      }
+    `.trim();
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]) as WordPool;
+    }
+
+    throw new Error('Failed to parse Gemini batch response');
+  }
+
+  async generateWord(age: number, language: string, previousWords: string[]): Promise<WordGeneratorResult> {
+    if (!this.apiKey) {
+      return { category: 'Fallback', word: 'banana' };
+    }
 
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }]
-        })
-      });
+      const pool = await this.getWordPool(language);
 
-      if (!response.ok) {
-        console.error(`Gemini API error with model ${this.model}: ${response.statusText}`);
-        throw new Error(`Gemini API error: ${response.statusText}`);
-      }
+      // Filter to categories that still have unused words
+      const availableCategories = pool.categories.filter(cat =>
+        cat.words.some(w => !previousWords.includes(w))
+      );
 
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      
-      const jsonMatch = text.match(/\{.*\}/s);
-      if (jsonMatch) {
-        const json = JSON.parse(jsonMatch[0]);
-        return json.word;
-      }
-      
-      return "apple";
+      const categories = availableCategories.length > 0 ? availableCategories : pool.categories;
+      const cat = categories[Math.floor(Math.random() * categories.length)];
+
+      const availableWords = cat.words.filter(w => !previousWords.includes(w));
+      const words = availableWords.length > 0 ? availableWords : cat.words;
+      const word = words[Math.floor(Math.random() * words.length)];
+
+      console.log('Random category: ', cat.name);
+      return { category: cat.name, word };
     } catch (error) {
       console.error("Error generating word:", error);
-      return "banana";
+      return { category: 'Fallback', word: 'banana' };
     }
   }
 }

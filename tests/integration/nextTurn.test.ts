@@ -15,7 +15,7 @@ global.fetch = jest.fn(() =>
     json: () => Promise.resolve({
       candidates: [{
         content: {
-          parts: [{ text: '{"word": "mock-word"}' }]
+          parts: [{ text: '{"categories": [{"name": "mock-category", "words": ["mock-word"]}]}' }]
         }
       }]
     }),
@@ -67,6 +67,7 @@ describe('POST /api/nextTurn/:gameId - happy path', () => {
     const updatedGame = await repo.findById(gameId);
     expect(updatedGame?.turns).toHaveLength(1);
     expect(updatedGame?.turns[0].word).toBe('mock-word');
+    expect(updatedGame?.turns[0].category).toBe('mock-category');
   });
 });
 
@@ -148,30 +149,47 @@ describe('POST /api/nextTurn/:gameId - turn structure', () => {
     expect(game?.turns).toHaveLength(2);
   });
 
-  it('should pass previously used words to the word generator', async () => {
+  it('should exclude previously used words from the next turn', async () => {
+    // Use a unique language to get a fresh cache key independent of other tests
+    const uniqueGameId = 'game-prev-words-excl';
+    const uniqueLanguage = 'it-IT';
+
+    // Override mock for this test to return a pool with known words
+    (global.fetch as jest.Mock).mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          candidates: [{
+            content: {
+              parts: [{ text: '{"categories": [{"name": "test-cat", "words": ["Apfel", "Tiger", "Giraffe"]}]}' }]
+            }
+          }]
+        }),
+      })
+    );
+
     const gameWithTurns: Game = {
-      gameId,
+      gameId: uniqueGameId,
       ageOfYoungestPlayer: 10,
-      language: 'de-DE',
+      language: uniqueLanguage,
       status: 'STARTED',
       players: makePlayers(4),
       turns: [
-        { word: 'Apfel', impostors: ['p0'], civilians: ['p1', 'p2', 'p3'] },
-        { word: 'Tiger', impostors: ['p1'], civilians: ['p0', 'p2', 'p3'] },
+        { word: 'Apfel', category: 'test-cat', impostors: ['p0'], civilians: ['p1', 'p2', 'p3'] },
+        { word: 'Tiger', category: 'test-cat', impostors: ['p1'], civilians: ['p0', 'p2', 'p3'] },
       ],
       createdAt: Date.now(),
     };
     await repo.save(gameWithTurns);
 
-    (global.fetch as jest.Mock).mockClear();
-    await POST(makePostRequest(gameId, hostSecret), { params: Promise.resolve({ gameId }) });
+    await POST(makePostRequest(uniqueGameId, hostSecret), { params: Promise.resolve({ gameId: uniqueGameId }) });
 
-    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-    const body = JSON.parse(fetchCall[1].body);
-    const prompt: string = body.contents[0].parts[0].text;
-
-    expect(prompt).toContain('Apfel');
-    expect(prompt).toContain('Tiger');
+    const updatedGame = await repo.findById(uniqueGameId);
+    const newWord = updatedGame?.turns[2].word;
+    // Only 'Giraffe' remains unused in the pool
+    expect(newWord).toBe('Giraffe');
+    expect(newWord).not.toBe('Apfel');
+    expect(newWord).not.toBe('Tiger');
   });
 });
 
