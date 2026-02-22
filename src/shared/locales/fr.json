@@ -46,6 +46,7 @@
   "waitingForTurn": "En attente du début du tour...",
   "gameOver": "Jeu terminé. Voir historique.",
   "errorJoining": "Erreur lors de la connexion",
+  "removedByHost": "L'hôte vous a retiré du jeu.",
   "gameNotFound": "Jeu introuvable",
   "joining": "Connexion...",
   "error": "Erreur",

@@ -118,8 +118,9 @@ test('host removes player from lobby', async ({ browser }) => {
     // Host now sees only their own badge
     await expect(page1.locator('[data-testid^="player-badge-"]')).toHaveCount(1, { timeout: 5_000 });
 
-    // Player 2's next poll returns 403 → error message is shown
+    // Player 2's next poll returns 403 → "removed by host" error message is shown
     await expect(page2.getByTestId('error-message')).toBeVisible({ timeout: 5_000 });
+    await expect(page2.getByTestId('error-message')).not.toContainText('Fehler beim Beitreten');
   } finally {
     await ctx1.close();
     await ctx2.close();

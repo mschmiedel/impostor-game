@@ -46,6 +46,7 @@
   "waitingForTurn": "Waiting for turn to start...",
   "gameOver": "Game over. See history.",
   "errorJoining": "Error joining",
+  "removedByHost": "You have been removed from the game by the host.",
   "gameNotFound": "Game not found",
   "joining": "Joining...",
   "error": "Error",

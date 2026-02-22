@@ -77,8 +77,13 @@ export default function GameRoom() {
           return;
         }
         
-        if (res.status === 401 || res.status === 403) {
-           setError(t("errorJoining")); 
+        if (res.status === 401) {
+           setError(t("errorJoining"));
+           return;
+        }
+
+        if (res.status === 403) {
+           setError(t("removedByHost"));
            return;
         }
         
