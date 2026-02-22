@@ -4,7 +4,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { QRCodeSVG } from 'qrcode.react';
-import { useLanguage } from "@/shared/i18n/LanguageContext";
+import { useLanguage, type Locale } from "@/shared/i18n/LanguageContext";
 
 type PlayerDTO = {
   id: string;
@@ -26,6 +26,7 @@ type GameDTO = {
   gameId: string;
   joinCode?: string;
   status: "JOINING" | "STARTED" | "FINISHED";
+  language: Locale;
   players: PlayerDTO[];
   turns: TurnDTO[];
 };
@@ -33,7 +34,7 @@ type GameDTO = {
 export default function GameRoom() {
   const { gameId } = useParams<{ gameId: string }>();
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, setLanguage } = useLanguage();
   
   const [game, setGame] = useState<GameDTO | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,6 +92,7 @@ export default function GameRoom() {
         if (res.ok) {
            const data = await res.json();
            setGame(data);
+           setLanguage(data.language);
            setError("");
         } else {
            setError(t("error"));
@@ -106,7 +108,7 @@ export default function GameRoom() {
     const interval = setInterval(fetchGame, 2000); 
 
     return () => clearInterval(interval);
-  }, [gameId, router, t, getSecret]); // Added getSecret to dependencies
+  }, [gameId, router, t, getSecret, setLanguage]);
 
   const apiCall = async (endpoint: string) => {
     const secret = getSecret();
