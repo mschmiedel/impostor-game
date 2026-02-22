@@ -46,6 +46,7 @@
   "waitingForTurn": "Warte auf Rundenstart...",
   "gameOver": "Spiel vorbei. Siehe Verlauf.",
   "errorJoining": "Fehler beim Beitreten",
+  "removedByHost": "Du wurdest vom Host aus dem Spiel entfernt.",
   "gameNotFound": "Spiel nicht gefunden",
   "joining": "Beitreten...",
   "error": "Fehler",

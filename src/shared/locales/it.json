@@ -46,6 +46,7 @@
   "waitingForTurn": "In attesa dell'inizio del turno...",
   "gameOver": "Gioco finito. Vedi cronologia.",
   "errorJoining": "Errore nell'unione",
+  "removedByHost": "Sei stato rimosso dal gioco dall'host.",
   "gameNotFound": "Gioco non trovato",
   "joining": "Unione in corso...",
   "error": "Errore",

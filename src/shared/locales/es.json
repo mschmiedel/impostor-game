@@ -46,6 +46,7 @@
   "waitingForTurn": "Esperando inicio del turno...",
   "gameOver": "Juego terminado. Ver historial.",
   "errorJoining": "Error al unirse",
+  "removedByHost": "El anfitrión te ha eliminado del juego.",
   "gameNotFound": "Juego no encontrado",
   "joining": "Uniéndose...",
   "error": "Error",
