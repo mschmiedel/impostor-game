@@ -16,6 +16,7 @@ export interface PlayerDTO {
 
 export interface TurnDTO {
   word: string | null;
+  category: string | null;
   role: 'IMPOSTOR' | 'CIVILIAN' | 'UNKNOWN';
   impostors?: string[];
   civilians?: string[];
@@ -88,6 +89,7 @@ export class GetGameDetailsUseCase {
 
       const dto: TurnDTO = {
         word: wordToReturn,
+        category: turn.category ?? null,
         role,
         isCurrent: isLast && !isFinished
       };

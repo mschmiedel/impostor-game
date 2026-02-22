@@ -42,10 +42,11 @@ export class NextTurnUseCase {
     const civilians = shuffled.slice(impostorCount).map(p => p.id);
     const previousWords = game.turns.map(t => t.word);
 
-    const word = await this.wordGenerator.generateWord(game.ageOfYoungestPlayer, game.language, previousWords);
+    const result = await this.wordGenerator.generateWord(game.ageOfYoungestPlayer, game.language, previousWords);
 
     const turn: Turn = {
-      word,
+      word: result.word,
+      category: result.category,
       impostors,
       civilians
     };
