@@ -188,6 +188,30 @@ jobs:
           path: test-results/
           retention-days: 30
 
+      - name: Push Report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: always()
+        with:
+          external_repository: mschmiedel/mschmiedel-reports
+          publish_branch: gh-pages
+          personal_token: ${{ secrets.REPORT_DEPLOY_TOKEN }}
+          publish_dir: ./playwright-report
+          destination_dir: ${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number || github.run_number }}
+          keep_files: true
+          force_orphan: true
+
+      - name: Post Playwright Report Link to PR
+        uses: actions/github-script@v7
+        if: always() && github.event_name == 'pull_request'
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🎭 Playwright Report\n\n[View full HTML report](https://mschmiedel.github.io/mschmiedel-reports/${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number }}/index.html)`,
+            });
+
       - name: Stop containers
         if: always()
         env:
