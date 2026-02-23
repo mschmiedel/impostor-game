@@ -1,0 +1,28 @@
+meta {
+  name: ResetGame
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/game/{{gameId}}/reset
+  body: json
+  auth: none
+}
+
+headers {
+  x-player-secret: {{adminSecret}}
+}
+
+body:json {
+  {
+    "language": "de-DE",
+    "ageOfYoungestPlayer": 10
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar("gameStatus", res.body.status);
+  }
+}

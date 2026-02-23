@@ -1,0 +1,21 @@
+meta {
+  name: ReadyPlayer
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/game/{{gameId}}/ready
+  body: none
+  auth: none
+}
+
+headers {
+  x-player-secret: {{playerSecret}}
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar("readyPlayerId", res.body.playerId);
+  }
+}

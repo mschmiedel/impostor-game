@@ -1,10 +1,9 @@
-
 import { NextResponse } from 'next/server';
-import { StartGameUseCase } from '@/application/use-cases/startGame';
+import { ResetGameUseCase } from '@/application/use-cases/resetGame';
 import { RedisGameRepository } from '@/infrastructure/adapters/redis/RedisGameRepository';
 
 const gameRepo = new RedisGameRepository();
-const startGameUseCase = new StartGameUseCase(gameRepo);
+const resetGameUseCase = new ResetGameUseCase(gameRepo);
 
 export async function POST(
   request: Request,
@@ -15,12 +14,17 @@ export async function POST(
 
   try {
     if (!playerSecret) {
-       return NextResponse.json({ error: 'Player secret is required' }, { status: 401 });
+      return NextResponse.json({ error: 'Player secret is required' }, { status: 401 });
     }
 
-    const result = await startGameUseCase.execute({
-      gameId: gameId,
-      playerSecret: playerSecret,
+    const body = await request.json();
+    const { language, ageOfYoungestPlayer } = body;
+
+    const result = await resetGameUseCase.execute({
+      gameId,
+      playerSecret,
+      language,
+      ageOfYoungestPlayer,
     });
 
     return NextResponse.json(result, { status: 200 });
@@ -29,9 +33,12 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     if (error.message === "Unauthorized") {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+    if (error.message === "Forbidden") {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
-    if (error.message === "Not enough ready players" || error.message === "Game is not in JOINING state" || error.message === "Only the HOST can start the game") {
+    if (error.message === "Game is not finished") {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     console.error(error);

@@ -45,6 +45,7 @@ describe('GET /api/getGameDetails/[gameId]', () => {
     expect(json.players).toHaveLength(1);
     expect(json.players[0].name).toBe('AdminUser');
     expect(json.players[0]).toHaveProperty('id');
+    expect(json.players[0]).toHaveProperty('isReady', true);
   });
 
   it('should return 401/403 with incorrect player secret', async () => {
@@ -73,8 +74,8 @@ describe('GET /api/getGameDetails - isMe flag', () => {
       language: 'de-DE',
       createdAt: Date.now(),
       players: [
-        { id: 'host-id', name: 'Host', role: 'HOST', secret: hostSecret },
-        { id: 'player-id', name: 'Player', role: 'PLAYER', secret: playerSecret },
+        { id: 'host-id', name: 'Host', role: 'HOST', secret: hostSecret, isReady: true },
+        { id: 'player-id', name: 'Player', role: 'PLAYER', secret: playerSecret, isReady: true },
       ],
       turns: [],
     };
@@ -103,7 +104,7 @@ describe('GET /api/getGameDetails - joinCode visibility', () => {
       ageOfYoungestPlayer: 10,
       language: 'de-DE',
       createdAt: Date.now(),
-      players: [{ id: 'p1', name: 'Alice', role: 'HOST', secret }],
+      players: [{ id: 'p1', name: 'Alice', role: 'HOST', secret, isReady: true }],
       turns: [],
     };
     await repo.save({ ...base, gameId: joiningGameId, status: 'JOINING', joinCode: '1234' });
@@ -138,9 +139,9 @@ describe('GET /api/getGameDetails - word visibility in active turn', () => {
       language: 'de-DE',
       createdAt: Date.now(),
       players: [
-        { id: civilianId, name: 'Civilian', role: 'PLAYER', secret: civilianSecret },
-        { id: impostorId, name: 'Impostor', role: 'PLAYER', secret: impostorSecret },
-        { id: 'p3', name: 'Other', role: 'HOST', secret: 'secret-other' },
+        { id: civilianId, name: 'Civilian', role: 'PLAYER', secret: civilianSecret, isReady: true },
+        { id: impostorId, name: 'Impostor', role: 'PLAYER', secret: impostorSecret, isReady: true },
+        { id: 'p3', name: 'Other', role: 'HOST', secret: 'secret-other', isReady: true },
       ],
       turns: [
         { word: 'Elefant', category: 'Tiere', impostors: [impostorId], civilians: [civilianId, 'p3'] },
@@ -193,9 +194,9 @@ describe('GET /api/getGameDetails - finished game reveals everything', () => {
       language: 'de-DE',
       createdAt: Date.now(),
       players: [
-        { id: impostorId, name: 'Impostor', role: 'PLAYER', secret: impostorSecret },
-        { id: civilianId, name: 'Civilian', role: 'HOST', secret: 'secret-civ-fin' },
-        { id: 'p3', name: 'Other', role: 'PLAYER', secret: 'secret-other-fin' },
+        { id: impostorId, name: 'Impostor', role: 'PLAYER', secret: impostorSecret, isReady: true },
+        { id: civilianId, name: 'Civilian', role: 'HOST', secret: 'secret-civ-fin', isReady: true },
+        { id: 'p3', name: 'Other', role: 'PLAYER', secret: 'secret-other-fin', isReady: true },
       ],
       turns: [
         { word: 'Giraffe', category: 'Tiere', impostors: [impostorId], civilians: [civilianId, 'p3'] },
@@ -237,9 +238,9 @@ describe('GET /api/getGameDetails - multi-turn game', () => {
       language: 'de-DE',
       createdAt: Date.now(),
       players: [
-        { id: impostorId, name: 'Impostor', role: 'PLAYER', secret: impostorSecret },
-        { id: civilianId, name: 'Civilian', role: 'HOST', secret: 'secret-civ-multi' },
-        { id: 'p3', name: 'Other', role: 'PLAYER', secret: 'secret-other-multi' },
+        { id: impostorId, name: 'Impostor', role: 'PLAYER', secret: impostorSecret, isReady: true },
+        { id: civilianId, name: 'Civilian', role: 'HOST', secret: 'secret-civ-multi', isReady: true },
+        { id: 'p3', name: 'Other', role: 'PLAYER', secret: 'secret-other-multi', isReady: true },
       ],
       turns: [
         { word: 'Apfel', category: 'Obst', impostors: [impostorId], civilians: [civilianId, 'p3'] },

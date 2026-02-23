@@ -54,7 +54,7 @@ export class CreateGameUseCase {
       ageOfYoungestPlayer: input.ageOfYoungestPlayer,
       language,
       status: 'JOINING',
-      players: [{ id: playerId, name: input.creatorName, secret: playerSecret, role: 'HOST' }],
+      players: [{ id: playerId, name: input.creatorName, secret: playerSecret, role: 'HOST', isReady: true }],
       turns: [], 
       createdAt: Date.now(),
     };

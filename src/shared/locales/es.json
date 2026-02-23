@@ -61,5 +61,8 @@
   "editName": "Editar nombre",
   "saveName": "Guardar",
   "cancelEdit": "Cancelar",
-  "removePlayer": "Eliminar jugador"
+  "removePlayer": "Eliminar jugador",
+  "restartGame": "Reiniciar juego",
+  "waitingForHostRestart": "Esperando que el anfitrión reinicie…",
+  "joinNextRound": "¿Unirse a la próxima ronda?"
 }

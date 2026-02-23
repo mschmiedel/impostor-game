@@ -37,6 +37,7 @@ function makePlayers(count: number) {
     name: `Player${i}`,
     role: (i === 0 ? 'HOST' : 'PLAYER') as 'HOST' | 'PLAYER',
     secret: `secret${i}`,
+    isReady: true,
   }));
 }
 

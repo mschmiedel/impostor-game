@@ -34,7 +34,7 @@ function baseGame(overrides: Partial<Game> = {}): Game {
     ageOfYoungestPlayer: 10,
     language: 'de-DE',
     createdAt: Date.now(),
-    players: [{ id: 'host-id', name: 'Host', role: 'HOST', secret: 'host-secret' }],
+    players: [{ id: 'host-id', name: 'Host', role: 'HOST', secret: 'host-secret', isReady: true }],
     turns: [],
     ...overrides,
   };
@@ -143,6 +143,7 @@ describe('POST /api/joinGame - player role and response', () => {
     const carol = updatedGame?.players.find(p => p.name === 'Carol');
 
     expect(carol?.role).toBe('PLAYER');
+    expect(carol?.isReady).toBe(true);
   });
 
   it('should return gameId, playerId and playerSecret in the response', async () => {

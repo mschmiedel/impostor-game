@@ -258,8 +258,12 @@ test('3-player game: create → join → 2 turns → finish', async ({ browser }
     // Step 10: All 3 sessions see the game as finished
     for (const page of [page1, page2, page3]) {
       await expect(page.locator('[data-testid="game-status"][data-status="FINISHED"]')).toBeVisible({ timeout: 10_000 });
-      await expect(page.locator('[data-testid="new-game-btn"]')).toBeVisible();
     }
+    // Host sees the restart form with a "New Game" fallback button
+    await expect(page1.locator('[data-testid="new-game-btn"]')).toBeVisible();
+    // Non-hosts see the "waiting for host to restart" message instead
+    await expect(page2.locator('[data-testid="waiting-for-restart"]')).toBeVisible();
+    await expect(page3.locator('[data-testid="waiting-for-restart"]')).toBeVisible();
   } finally {
     await ctx1.close();
     await ctx2.close();
