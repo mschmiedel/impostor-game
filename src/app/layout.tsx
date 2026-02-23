@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/shared/i18n/LanguageContext";
+import AdBanner from "@/app/components/AdBanner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,9 +18,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} min-h-[100dvh] flex flex-col`}>
         <LanguageProvider>
-          {children}
+          <main className="flex-grow flex flex-col">
+            {children}
+          </main>
+          <AdBanner />
         </LanguageProvider>
       </body>
     </html>
