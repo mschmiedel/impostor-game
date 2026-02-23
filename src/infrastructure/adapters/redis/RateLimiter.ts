@@ -59,20 +59,24 @@ async function checkRateLimit(
 
 // ── Public rate-limit functions ───────────────────────────────────────────────
 
-/** Max 1 game creation per 60 seconds per (hashed) IP. */
+/** Max 1 game creation per 60 seconds per (hashed) IP (overridable via env). */
 export async function limitCreateGame(
   hashedIp: string,
 ): Promise<RateLimitResult> {
-  return checkRateLimit(`rl:create:${hashedIp}`, 1, 60);
+  const max = parseInt(process.env.RATE_LIMIT_CREATE_MAX ?? '1', 10);
+  const windowSecs = parseInt(process.env.RATE_LIMIT_CREATE_WINDOW_SECS ?? '60', 10);
+  return checkRateLimit(`rl:create:${hashedIp}`, max, windowSecs);
 }
 
 /**
- * Max 60 requests per 10 seconds per (hashed) IP.
+ * Max 60 requests per 10 seconds per (hashed) IP (overridable via env).
  * The high limit accommodates several clients sharing a single NAT/Wi-Fi IP
  * while still blocking abusive automated traffic.
  */
 export async function limitGlobalAPI(
   hashedIp: string,
 ): Promise<RateLimitResult> {
-  return checkRateLimit(`rl:global:${hashedIp}`, 60, 10);
+  const max = parseInt(process.env.RATE_LIMIT_GLOBAL_MAX ?? '60', 10);
+  const windowSecs = parseInt(process.env.RATE_LIMIT_GLOBAL_WINDOW_SECS ?? '10', 10);
+  return checkRateLimit(`rl:global:${hashedIp}`, max, windowSecs);
 }
