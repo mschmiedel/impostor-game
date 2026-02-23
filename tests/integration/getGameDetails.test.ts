@@ -9,6 +9,12 @@ import { Game } from '@/domain/entities/Game';
 import { NextRequest } from 'next/server';
 
 jest.mock('ioredis', () => require('ioredis-mock'));
+jest.mock('@/infrastructure/adapters/redis/RateLimiter', () => ({
+  limitCreateGame: jest.fn().mockResolvedValue({ allowed: true, remaining: 0 }),
+  limitGlobalAPI:  jest.fn().mockResolvedValue({ allowed: true, remaining: 59 }),
+  getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
+  hashIp:      jest.fn().mockReturnValue('hashed-test-ip'),
+}));
 
 const repo = new RedisGameRepository();
 
@@ -46,6 +52,8 @@ describe('GET /api/getGameDetails/[gameId]', () => {
     expect(json.players[0].name).toBe('AdminUser');
     expect(json.players[0]).toHaveProperty('id');
     expect(json.players[0]).toHaveProperty('isReady', true);
+    // Step 3: secret must never be exposed in the DTO
+    expect(json.players[0].secret).toBeUndefined();
   });
 
   it('should return 401/403 with incorrect player secret', async () => {
@@ -58,6 +66,38 @@ describe('GET /api/getGameDetails/[gameId]', () => {
     const gameId = 'non-existent-id';
     const res = await GET(makeGetRequest(gameId, 'some-secret'), { params: Promise.resolve({ gameId }) });
     expect(res.status).toBe(404);
+  });
+});
+
+describe('GET /api/getGameDetails - secret must not be leaked', () => {
+  const gameId = 'game-no-secret';
+  const hostSecret = 'top-secret-host';
+  const playerSecret = 'top-secret-player';
+
+  beforeAll(async () => {
+    const game: Game = {
+      gameId,
+      status: 'JOINING',
+      ageOfYoungestPlayer: 10,
+      language: 'de-DE',
+      createdAt: Date.now(),
+      players: [
+        { id: 'h', name: 'Host',   role: 'HOST',   secret: hostSecret,   isReady: true },
+        { id: 'p', name: 'Player', role: 'PLAYER', secret: playerSecret, isReady: true },
+      ],
+      turns: [],
+    };
+    await repo.save(game);
+  });
+
+  it('should not include secret in any player entry (self or others)', async () => {
+    const res = await GET(makeGetRequest(gameId, playerSecret), { params: Promise.resolve({ gameId }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    for (const player of json.players) {
+      expect(player.secret).toBeUndefined();
+    }
   });
 });
 

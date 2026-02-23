@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { GetGameDetailsUseCase } from '@/application/use-cases/getGameDetails';
 import { RedisGameRepository } from '@/infrastructure/adapters/redis/RedisGameRepository';
+import { limitGlobalAPI, getClientIp, hashIp } from '@/infrastructure/adapters/redis/RateLimiter';
 
 const gameRepo = new RedisGameRepository();
 const getGameDetailsUseCase = new GetGameDetailsUseCase(gameRepo);
@@ -12,6 +13,12 @@ export async function GET(
 ) {
   const playerSecret = request.headers.get('x-player-secret');
   const { gameId } = await params;
+
+  // Rate limiting
+  const { allowed } = await limitGlobalAPI(hashIp(getClientIp(request)));
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
+  }
 
   try {
     if (!playerSecret) {

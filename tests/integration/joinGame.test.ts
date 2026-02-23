@@ -9,6 +9,12 @@ import { Game } from '@/domain/entities/Game';
 import { NextRequest } from 'next/server';
 
 jest.mock('ioredis', () => require('ioredis-mock'));
+jest.mock('@/infrastructure/adapters/redis/RateLimiter', () => ({
+  limitCreateGame: jest.fn().mockResolvedValue({ allowed: true, remaining: 0 }),
+  limitGlobalAPI:  jest.fn().mockResolvedValue({ allowed: true, remaining: 59 }),
+  getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
+  hashIp:      jest.fn().mockReturnValue('hashed-test-ip'),
+}));
 
 const repo = new RedisGameRepository();
 
