@@ -173,7 +173,7 @@ jobs:
         run: zip -r playwright-report.zip playwright-report/
 
       - name: Upload Playwright HTML Report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
@@ -181,7 +181,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Playwright Test Results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-test-results
