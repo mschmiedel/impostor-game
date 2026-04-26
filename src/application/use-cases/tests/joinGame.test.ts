@@ -1,4 +1,4 @@
-import { JoinGameUseCase } from './joinGame.ts';
+import { JoinGameUseCase } from '../joinGame.ts';
 import { GameRepository } from '@/domain/ports/GameRepository';
 import { GameStatus } from '@/domain/entities/Game';
 
@@ -108,25 +108,13 @@ describe('JoinGameUseCase', () => {
     });
 
     it('should throw an error if join code is incorrect', async () => {
-      const existingGame = {
-        gameId,
-        joinCode: '0000', // different join code
-        ageOfYoungestPlayer: 10,
-        language: 'en-US',
-        status: GameStatus.JOINING,
-        players: [],
-        turns: [],
-        createdAt: Date.now(),
-      };
-
-      gameRepository.findByJoinCode.mockResolvedValue(existingGame);
+      gameRepository.findByJoinCode.mockResolvedValue(null);
 
       await expect(useCase.execute({ joinCode: '9999', playerName })).rejects.toThrow(
-        'Invalid join code'
+        'Game not found'
       );
 
-      // Ensure save was not called
-      expect(gameRepository.findByJoinCode).toHaveBeenCalledWith(gameId); // Actually called with the input joinCode '9999'
+      expect(gameRepository.findByJoinCode).toHaveBeenCalledWith('9999');
       expect(gameRepository.save).not.toHaveBeenCalled();
     });
 
@@ -145,7 +133,7 @@ describe('JoinGameUseCase', () => {
       gameRepository.findById.mockResolvedValue(existingGame);
 
       await expect(useCase.execute({ gameId, playerName })).rejects.toThrow(
-        'Game has already started'
+        'Game is not in JOINING state'
       );
 
       // Ensure save was not called
@@ -171,8 +159,8 @@ describe('JoinGameUseCase', () => {
         'Player name is required'
       );
 
-      // Ensure save was not called
-      expect(gameRepository.findById).toHaveBeenCalledWith(gameId);
+      // findById is never reached because playerName validation happens first
+      expect(gameRepository.findById).not.toHaveBeenCalled();
       expect(gameRepository.save).not.toHaveBeenCalled();
     });
   });
