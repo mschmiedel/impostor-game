@@ -1,4 +1,8 @@
-export type GameStatus = 'JOINING' | 'STARTED' | 'FINISHED';
+export enum GameStatus {
+  JOINING = 'JOINING',
+  STARTED = 'STARTED',
+  FINISHED = 'FINISHED',
+}
 
 export interface Player {
   id: string;
